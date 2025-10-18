@@ -11,7 +11,7 @@ def handle_events():
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
         else:
-            Main_Character.handle_evnet(event)
+            main_character.handle_event(event)
 
 
 def reset_world():
@@ -43,6 +43,6 @@ while running :
     handle_events()
     update_world()
     render_world()
-    delay(0.1)
+    delay(0.01)
 
 close_canvas()
