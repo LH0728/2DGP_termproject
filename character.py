@@ -9,6 +9,25 @@ def left_down(e):
     return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_LEFT
 def left_up(e):
     return e[0] == 'INPUT'and e[1].type == SDL_KEYUP and e[1].key == SDLK_LEFT
+def space_down(e):
+    return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
+
+
+class JUMP:
+    def __init__(self, character):
+        self.character = character
+
+    def enter(self, e):
+        pass
+
+    def do(self):
+        pass
+
+    def exit(self, e):
+        pass
+
+    def draw(self):
+        pass
 
 class Run:
     def __init__(self, character):
