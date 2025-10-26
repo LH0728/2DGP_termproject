@@ -1,5 +1,6 @@
 from pico2d import *
 from character import Main_Character
+from village import Village
 
 def handle_events():
     global running
@@ -19,6 +20,9 @@ def reset_world():
     global main_character
 
     world = []
+
+    village = Village()
+    world.append(village)
 
     main_character = Main_Character()
     world.append(main_character)

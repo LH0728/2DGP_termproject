@@ -23,7 +23,7 @@ class Run:
         # 그 외의 경우는 현재 face_dir 유지
 
     def do(self):
-        self.character.frame = (self.character.frame + 1) % 3
+        # frame 증가는 Main_Character.update()에서 제어함
         self.character.x += self.character.dir * 10
 
     def exit(self, e):
@@ -33,14 +33,14 @@ class Run:
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
-                self.character.x, self.character.y
+                self.character.x, self.character.y, 150, 150
             )
         else:
             # 좌우 반전하여 그리기 ('h'는 수평 반전)
             self.character.image.clip_composite_draw(
                 self.character.frame * 60, 0, 60, 60,
                 0, 'h',
-                self.character.x, self.character.y, 60, 60
+                self.character.x, self.character.y, 150, 150
             )
 class Idle:
 
@@ -54,30 +54,38 @@ class Idle:
         pass
 
     def do(self):
-        self.character.frame = (self.character.frame + 1) % 3
+        # frame 증가는 Main_Character.update()에서 제어함
+        pass
 
     def draw(self):
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
-                self.character.x, self.character.y
+                self.character.x, self.character.y, 150, 150
             )
         else:
             # 좌우 반전하여 그리기 ('h'는 수평 반전)
             self.character.image.clip_composite_draw(
                 self.character.frame * 60, 0, 60, 60,
                 0, 'h',
-                self.character.x, self.character.y, 60, 60
+                self.character.x, self.character.y, 150, 150
             )
 class Main_Character:
     def __init__(self):
-        self.x, self.y = 600, 400
+        self.x, self.y = 600, 150
         self.frame = 0
         self.face_dir = 1
         self.dir = 0
         self.IDLE = Idle(self)
         self.RUN = Run(self)
         self.image = load_image('10001_T1.png')
+
+        # 애니메이션 속도 제어용
+        self.last_time = get_time()
+        self.anim_acc = 0.0
+        self.anim_delay = 0.15  # 초 단위, 프레임 하나 당 0.15초 -> 느리게
+        self.frame_count = 3
+
         self.state_machine = StateMachine(
             self.IDLE, {
                 self.IDLE: {
@@ -89,7 +97,20 @@ class Main_Character:
             }
         )
     def update(self):
+        # 시간 누적 계산
+        now = get_time()
+        dt = now - self.last_time
+        self.last_time = now
+
+        # 상태(움직임) 업데이트
         self.state_machine.update()
+
+        # 애니메이션 타이머 업데이트 (프레임 속도 제어)
+        self.anim_acc += dt
+        if self.anim_acc >= self.anim_delay:
+            steps = int(self.anim_acc // self.anim_delay)
+            self.anim_acc -= steps * self.anim_delay
+            self.frame = (self.frame + steps) % self.frame_count
 
     def draw(self):
         self.state_machine.draw()
