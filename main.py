@@ -18,6 +18,7 @@ def handle_events():
 def reset_world():
     global world
     global main_character
+    global Axe
 
     world = []
 
@@ -26,6 +27,7 @@ def reset_world():
 
     main_character = Main_Character()
     world.append(main_character)
+
 
 def update_world():
     for o in world:

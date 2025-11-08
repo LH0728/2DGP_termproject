@@ -1,5 +1,6 @@
 from pico2d import *
 from state_machine import StateMachine
+from axe import *
 
 def right_up(e):
     return e[0] == 'INPUT'and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
@@ -13,13 +14,42 @@ def space_down(e):
     return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
 def land_event(e):
     return e[0] == 'LAND'
-
 def land_to_run(e):
     return e[0] == 'LAND_RUN'
-
 def land_to_idle(e):
     return e[0] == 'LAND_IDLE'
+def a_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
+def a_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_a
 
+
+
+class Picking:
+    def __init__(self, character):
+        self.character = character
+
+    def enter(self, e):
+        self.character.axe()
+
+    def do(self):
+        pass  # 애니메이션은 Main_Character.update()에서 처리
+
+    def exit(self, e):
+        pass
+
+    def draw(self):
+        if self.character.face_dir == 1:
+            self.character.pick_image.clip_draw(
+                self.character.frame * 33, 0, 33, 36,
+                self.character.x, self.character.y, 82, 90
+            )
+        else:
+            self.character.pick_image.clip_composite_draw(
+                self.character.frame * 33, 0, 33, 36,
+                0, 'h',
+                self.character.x, self.character.y, 82, 90
+            )
 
 
 class JUMP:
@@ -149,36 +179,46 @@ class Main_Character:
         self.is_jumping = False
         self.key_right_pressed = False
         self.key_left_pressed = False
+        self.key_a_pressed = False
+        self.prev_state = None
+        self.axes = []  # 도끼 리스트 추가
 
         self.IDLE = Idle(self)
         self.RUN = Run(self)
         self.JUMP = JUMP(self)
+        self.PICKING = Picking(self)
+
         self.image = load_image('10001_T1.png')
+        self.pick_image = load_image('10001_T1_Picking.png')  # ← 추가!
 
         # 애니메이션 속도 제어용
         self.last_time = get_time()
         self.anim_acc = 0.0
-        self.anim_delay = 0.15  # 초 단위, 프레임 하나 당 0.15초 -> 느리게
+        self.anim_delay = 0.15
         self.frame_count = 3
 
         self.state_machine = StateMachine(
             self.IDLE, {
                 self.IDLE: {
                     right_down: self.RUN, left_down: self.RUN,
-                    space_down: self.JUMP
+                    space_down: self.JUMP,
+                    a_down: self.PICKING
                 },
                 self.RUN: {
                     right_up: self.IDLE, left_up: self.IDLE,
-                    space_down: self.JUMP
+                    space_down: self.JUMP,
+                    a_down: self.PICKING
                 },
                 self.JUMP: {
                     right_down: self.JUMP, left_down: self.JUMP,
-                    land_to_run: self.RUN,  # ← 방향키 누르고 착지
-                    land_to_idle: self.IDLE  # ← 아무것도 안 누르고 착지
+                    land_to_run: self.RUN,
+                    land_to_idle: self.IDLE
+                },
+                self.PICKING: {
+                    a_up: None
                 }
             }
         )
-
     def update(self):
         # 시간 누적 계산
         now = get_time()
@@ -195,8 +235,12 @@ class Main_Character:
             self.anim_acc -= steps * self.anim_delay
             self.frame = (self.frame + steps) % self.frame_count
 
+        # 도끼들 업데이트
+        self.axes = [axe for axe in self.axes if not axe.update()]
     def draw(self):
         self.state_machine.draw()
+        for axe in self.axes:
+            axe.draw()
 
     def handle_event(self, event):
         # 키 상태 추적
@@ -205,10 +249,40 @@ class Main_Character:
                 self.key_right_pressed = True
             elif event.key == SDLK_LEFT:
                 self.key_left_pressed = True
+            elif event.key == SDLK_a:
+                self.key_a_pressed = True
+                if self.state_machine.cur_state in [self.IDLE, self.RUN]:
+                    self.prev_state = self.state_machine.cur_state
+
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
                 self.key_right_pressed = False
             elif event.key == SDLK_LEFT:
                 self.key_left_pressed = False
+            elif event.key == SDLK_a:
+                self.key_a_pressed = False
+                # PICKING 상태에서 A키를 뗄 때
+                if self.state_machine.cur_state == self.PICKING:
+                    # 현재 방향키 상태 확인
+                    if self.key_right_pressed:
+                        self.dir = self.face_dir = 1
+                        self.state_machine.cur_state = self.RUN
+                        self.RUN.enter(('INPUT', event))
+                    elif self.key_left_pressed:
+                        self.dir = self.face_dir = -1
+                        self.state_machine.cur_state = self.RUN
+                        self.RUN.enter(('INPUT', event))
+                    else:
+                        # 방향키가 눌리지 않음 → IDLE
+                        self.dir = 0
+                        self.state_machine.cur_state = self.IDLE
+                        self.IDLE.enter(('INPUT', event))
+                    return
 
         self.state_machine.handle_state_event(('INPUT', event))
+
+    def axe(self):
+        # Axe 생성 시 x, y, direction 대신 parent=self를 전달합니다.
+        # 이제 Axe가 스스로 캐릭터의 위치와 방향을 따라 움직입니다.
+        new_axe = Axe(parent=self)
+        self.axes.append(new_axe)
