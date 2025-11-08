@@ -22,7 +22,8 @@ def a_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
 def a_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_a
-
+def s_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_s
 
 
 class Picking:
@@ -180,8 +181,10 @@ class Main_Character:
         self.key_right_pressed = False
         self.key_left_pressed = False
         self.key_a_pressed = False
+        self.key_s_pressed = False
         self.prev_state = None
         self.axes = []  # 도끼 리스트 추가
+        self.thrown_axes = [] # 던지는 도끼 리스트
 
         self.IDLE = Idle(self)
         self.RUN = Run(self)
@@ -202,12 +205,14 @@ class Main_Character:
                 self.IDLE: {
                     right_down: self.RUN, left_down: self.RUN,
                     space_down: self.JUMP,
-                    a_down: self.PICKING
+                    a_down: self.PICKING,
+                    s_down: self.IDLE # 던지기 후에도 IDLE 유지
                 },
                 self.RUN: {
                     right_up: self.IDLE, left_up: self.IDLE,
                     space_down: self.JUMP,
-                    a_down: self.PICKING
+                    a_down: self.PICKING,
+                    s_down: self.RUN # 던지기 후에도 RUN 유지
                 },
                 self.JUMP: {
                     right_down: self.JUMP, left_down: self.JUMP,
@@ -237,9 +242,16 @@ class Main_Character:
 
         # 도끼들 업데이트
         self.axes = [axe for axe in self.axes if not axe.update()]
+        # 던져진 도끼들 업데이트
+        for axe in self.thrown_axes:
+            if axe.update():
+                self.thrown_axes.remove(axe)
+
     def draw(self):
         self.state_machine.draw()
         for axe in self.axes:
+            axe.draw()
+        for axe in self.thrown_axes:
             axe.draw()
 
     def handle_event(self, event):
@@ -253,6 +265,11 @@ class Main_Character:
                 self.key_a_pressed = True
                 if self.state_machine.cur_state in [self.IDLE, self.RUN]:
                     self.prev_state = self.state_machine.cur_state
+            elif event.key == SDLK_s:
+                # s_down 이벤트가 발생하면, 현재 상태를 유지하면서 throw_axe만 호출
+                if self.state_machine.cur_state in [self.IDLE, self.RUN]:
+                    self.throw_axe()
+
 
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
@@ -286,3 +303,9 @@ class Main_Character:
         # 이제 Axe가 스스로 캐릭터의 위치와 방향을 따라 움직입니다.
         new_axe = Axe(parent=self)
         self.axes.append(new_axe)
+
+    def throw_axe(self):
+        # 캐릭터의 손 위치에서 ThrownAxe 생성
+        axe_y_pos = self.y + 10
+        new_thrown_axe = ThrownAxe(self.x, axe_y_pos, self.face_dir)
+        self.thrown_axes.append(new_thrown_axe)

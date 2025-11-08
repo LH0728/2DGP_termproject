@@ -80,3 +80,43 @@ class Axe:
             # 왼쪽을 볼 때는 오른쪽 각도를 반전시키고, 이미지를 수평으로 뒤집습니다.
             mirrored_draw_angle = -base_draw_angle
             Axe.image.clip_composite_draw(frame_x, 0, 30, 24, mirrored_draw_angle, 'h', self.x, self.y, 100, 100)
+
+
+class ThrownAxe:
+    image = None
+    SPEED_PPS = 700  # 초당 700 픽셀 속도
+    ROTATION_SPEED_RPS = 2  # 초당 2바퀴 회전
+    LIFETIME_S = 1.5  # 1.5초 후 소멸
+
+    def __init__(self, x, y, direction):
+        if ThrownAxe.image is None:
+            ThrownAxe.image = load_image('10001_T1_Pickax.png')
+
+        self.x, self.y = x, y
+        self.direction = direction
+        self.angle_rad = 0
+        self.spawn_time = get_time()
+        self.last_time = self.spawn_time
+
+    def update(self):
+        # 생존 시간 체크
+        if get_time() - self.spawn_time > ThrownAxe.LIFETIME_S:
+            return True  # True를 반환하여 삭제 신호 보냄
+
+        # 경과 시간 계산
+        now = get_time()
+        dt = now - self.last_time
+        self.last_time = now
+
+        # 수평 이동
+        self.x += ThrownAxe.SPEED_PPS * self.direction * dt
+
+        # 회전
+        self.angle_rad += ThrownAxe.ROTATION_SPEED_RPS * 2 * math.pi * dt
+
+        return False  # 계속 업데이트
+
+    def draw(self):
+        # ThrownAxe는 하나의 이미지를 계속 회전시키므로 프레임 계산은 필요 없습니다.
+        # 이미지의 중앙(15, 12)을 기준으로 그립니다.
+        ThrownAxe.image.clip_composite_draw(0, 0, 30, 24, self.angle_rad, '', self.x, self.y, 100, 100)
