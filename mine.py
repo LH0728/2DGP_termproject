@@ -1,27 +1,16 @@
-from pico2d import load_image
+from pico2d import *
 
-class Village:
+class Mine:
     def __init__(self):
-        self.image = load_image('bg_near.png')
-        self.image2 = load_image('bg_tower.png')
-        self.image3 = load_image('grass.png')
-
-        # 배경 이미지를 그릴 x 좌표들 (캐릭터 y축 150에 맞춰서)
-        self.copy_x_positions = [0, 300, 600, 900, 1200]
-
-        # image3를 image2 아래 빈 공간에 깔 x 좌표들
-        self.ground_x_positions = [150, 450, 750, 1050]
+        # 'bg_near.png'를 광산 배경 이미지로 사용합니다.
+        # 다른 이미지를 원하시면 파일명을 수정해주세요.
+        self.image = load_image('bg4_boss.png')
 
     def draw(self):
-        # image3를 image2 아래쪽 빈 공간에 쭉 깔기 (y=100 아래 공간)
-        for x_pos in self.ground_x_positions:
-            self.image3.draw(x_pos, 50, 300, 115)
-
-        self.image2.draw_to_origin(0, 100, 1200, 800)
-
-        # image2 바로 위에 딱 붙여서 그리기 (y=100이 바닥이므로 그 위에 배치)
-        for x_pos in self.copy_x_positions:
-            self.image.draw(x_pos, 200, 300, 200)
+        # 이미지를 화면 중앙에 꽉 채워서 그립니다.
+        self.image.draw(600, 400, 1200, 800)
 
     def update(self):
+        # 배경은 특별히 업데이트할 내용이 없습니다.
         pass
+
