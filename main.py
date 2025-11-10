@@ -10,6 +10,19 @@ mine_world = []
 dungeon_world = []
 current_world = None
 
+def collide(a, b):
+    left_a, bottom_a, right_a, top_a = a.get_bb()
+    left_b, bottom_b, right_b, top_b = b.get_bb()
+
+    if left_a > right_b: return False
+    if right_a < left_b: return False
+    if top_a < bottom_b: return False
+    if bottom_a > top_b: return False
+
+    return True
+
+
+
 def handle_events():
     global running
     events = get_events()
@@ -51,6 +64,35 @@ def update_world():
             o.update(main_character)
         else:
             o.update()
+
+    # 충돌 처리 (광산 월드에서만)
+    if current_world == mine_world:
+        mine = mine_world[0]  # Mine 객체 가져오기
+        moles_to_remove = []
+        axes_to_remove = []
+
+        # 1. 휘두르는 도끼와 두더지 충돌
+        for axe in main_character.axes:
+            for mole in mine.moles:
+                if collide(axe, mole):
+                    if mole not in moles_to_remove:
+                        moles_to_remove.append(mole)
+
+        # 2. 던지는 도끼와 두더지 충돌
+        for thrown_axe in main_character.thrown_axes:
+            for mole in mine.moles:
+                if collide(thrown_axe, mole):
+                    if mole not in moles_to_remove:
+                        moles_to_remove.append(mole)
+                    if thrown_axe not in axes_to_remove:
+                        axes_to_remove.append(thrown_axe)
+
+        # 충돌된 객체들 제거
+        for mole in moles_to_remove:
+            mine.moles.remove(mole)
+        for thrown_axe in axes_to_remove:
+            main_character.thrown_axes.remove(thrown_axe)
+
 
     # 월드 전환 로직
     if current_world == village_world and main_character.x > 1200:
