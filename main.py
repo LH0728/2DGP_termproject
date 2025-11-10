@@ -47,9 +47,11 @@ def update_world():
     if current_world == village_world and main_character.x > 1200:
         current_world = mine_world
         main_character.x = 10 # 화면 왼쪽에서 나타남
+        main_character.clear_projectiles()
     elif current_world == mine_world and main_character.x < 0:
         current_world = village_world
         main_character.x = 1190 # 화면 오른쪽에서 나타남
+        main_character.clear_projectiles()
 
 
 def render_world():

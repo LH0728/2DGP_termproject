@@ -309,3 +309,7 @@ class Main_Character:
         axe_y_pos = self.y + 10
         new_thrown_axe = ThrownAxe(self.x, axe_y_pos, self.face_dir)
         self.thrown_axes.append(new_thrown_axe)
+
+    def clear_projectiles(self):
+        self.thrown_axes.clear()
+        self.axes.clear()
