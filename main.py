@@ -47,7 +47,10 @@ def setup_worlds():
 def update_world():
     global current_world, village_world, mine_world, dungeon_world
     for o in current_world:
-        o.update()
+        if isinstance(o, Mine):
+            o.update(main_character)
+        else:
+            o.update()
 
     # 월드 전환 로직
     if current_world == village_world and main_character.x > 1200:
