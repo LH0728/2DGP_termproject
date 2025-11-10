@@ -253,6 +253,10 @@ class Main_Character:
             axe.draw()
         for axe in self.thrown_axes:
             axe.draw()
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
 
     def handle_event(self, event):
         # 키 상태 추적

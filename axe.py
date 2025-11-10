@@ -80,6 +80,10 @@ class Axe:
             # 왼쪽을 볼 때는 오른쪽 각도를 반전시키고, 이미지를 수평으로 뒤집습니다.
             mirrored_draw_angle = -base_draw_angle
             Axe.image.clip_composite_draw(frame_x, 0, 30, 24, mirrored_draw_angle, 'h', self.x, self.y, 100, 100)
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
 
 
 class ThrownAxe:
@@ -120,3 +124,7 @@ class ThrownAxe:
         # ThrownAxe는 하나의 이미지를 계속 회전시키므로 프레임 계산은 필요 없습니다.
         # 이미지의 중앙(15, 12)을 기준으로 그립니다.
         ThrownAxe.image.clip_composite_draw(0, 0, 30, 24, self.angle_rad, '', self.x, self.y, 100, 100)
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
