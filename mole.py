@@ -13,6 +13,7 @@ class Mole:
         self.wander_timer = random.randint(50, 150)
         self.dir_x = random.choice([-1, 1])
         self.face_dir = 1
+        self.hp = 3
 
         # 애니메이션 관련 변수
         self.frame = 0
@@ -31,6 +32,18 @@ class Mole:
         self.attack_frame_height = 25
         self.attack_frame_count = 5
 
+    def hit(self, direction):
+        if self.hp <= 0: return False # 이미 죽은 경우 처리 안함
+
+        self.hp -= 1
+        # 밀려나는 효과
+        self.x += direction * 30 # 30픽셀만큼 밀려남
+        self.x = clamp(50, self.x, 1150) # 화면 밖으로 나가지 않도록
+
+        if self.hp <= 0:
+            self.visible = False
+            return True # 사망
+        return False # 생존
 
     def update(self, character):
         if not self.visible:

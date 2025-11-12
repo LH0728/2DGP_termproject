@@ -75,23 +75,31 @@ def update_world():
         for axe in main_character.axes:
             for mole in mine.moles:
                 if collide(axe, mole):
-                    if mole not in moles_to_remove:
-                        moles_to_remove.append(mole)
+                    # mole.hit()을 호출하고, True를 반환하면(죽었으면) 제거 목록에 추가
+                    if mole.hit(main_character.face_dir):
+                        if mole not in moles_to_remove:
+                            moles_to_remove.append(mole)
 
         # 2. 던지는 도끼와 두더지 충돌
         for thrown_axe in main_character.thrown_axes:
             for mole in mine.moles:
                 if collide(thrown_axe, mole):
-                    if mole not in moles_to_remove:
-                        moles_to_remove.append(mole)
+                    # mole.hit()을 호출하고, True를 반환하면(죽었으면) 제거 목록에 추가
+                    if mole.hit(thrown_axe.direction):
+                        if mole not in moles_to_remove:
+                            moles_to_remove.append(mole)
+
+                    # 던진 도끼는 충돌 시 항상 제거
                     if thrown_axe not in axes_to_remove:
                         axes_to_remove.append(thrown_axe)
 
         # 충돌된 객체들 제거
         for mole in moles_to_remove:
-            mine.moles.remove(mole)
+            if mole in mine.moles:
+                mine.moles.remove(mole)
         for thrown_axe in axes_to_remove:
-            main_character.thrown_axes.remove(thrown_axe)
+            if thrown_axe in main_character.thrown_axes:
+                main_character.thrown_axes.remove(thrown_axe)
 
 
     # 월드 전환 로직
