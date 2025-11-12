@@ -10,3 +10,11 @@ class Mine_2:
 
     def update(self, character):
         pass
+
+class Soil:
+    def __init__(self):
+        pass
+    def draw(self):
+        pass
+    def update(self, character):
+        pass
