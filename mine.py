@@ -9,11 +9,11 @@ class Mine:
         self.image = load_image('bg4_boss.png')
         self.moles = [Mole(random.randint(100, 1100), 120, 2) for _ in range(5)]
 
-    def draw(self):
+    def draw(self, camera_y):
         # 이미지를 화면 중앙에 꽉 채워서 그립니다.
         self.image.draw(600, 400, 1200, 800)
         for mole in self.moles:
-            mole.draw()
+            mole.draw(camera_y)
 
     def update(self, character):
         # 배경은 특별히 업데이트할 내용이 없습니다.

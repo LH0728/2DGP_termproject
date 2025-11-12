@@ -82,17 +82,18 @@ class Picking:
     def exit(self, e):
         pass
 
-    def draw(self):
+    def draw(self, camera_y):
+        draw_y = self.character.y - camera_y
         if self.character.face_dir == 1:
             self.character.pick_image.clip_draw(
                 self.character.frame * 33, 0, 33, 36,
-                self.character.x, self.character.y, 82, 90
+                self.character.x, draw_y, 82, 90
             )
         else:
             self.character.pick_image.clip_composite_draw(
                 self.character.frame * 33, 0, 33, 36,
                 0, 'h',
-                self.character.x, self.character.y, 82, 90
+                self.character.x, draw_y, 82, 90
             )
 
 
@@ -148,18 +149,18 @@ class JUMP:
         elif land_to_idle(e):
             self.character.dir = 0
 
-    def draw(self):
-        # ... (draw 함수 원본과 동일) ...
+    def draw(self,camera_y):
+        draw_y = self.character.y - camera_y
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
         else:
             self.character.image.clip_composite_draw(
                 self.character.frame * 60, 0, 60, 60,
                 0, 'h',
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
 
 
@@ -185,19 +186,18 @@ class Run:
     def exit(self, e):
         pass
 
-    def draw(self):
-        # ... (draw 함수 원본과 동일) ...
+    def draw(self, camera_y):
+        draw_y = self.character.y - camera_y
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
         else:
-            # 좌우 반전하여 그리기 ('h'는 수평 반전)
             self.character.image.clip_composite_draw(
                 self.character.frame * 60, 0, 60, 60,
                 0, 'h',
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
 
 
@@ -221,19 +221,18 @@ class Idle:
 
         pass
 
-    def draw(self):
-        # ... (draw 함수 원본과 동일) ...
+    def draw(self, camera_y):
+        draw_y = self.character.y - camera_y
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
         else:
-            # 좌우 반전하여 그리기 ('h'는 수평 반전)
             self.character.image.clip_composite_draw(
                 self.character.frame * 60, 0, 60, 60,
                 0, 'h',
-                self.character.x, self.character.y, 150, 150
+                self.character.x, draw_y, 150, 150
             )
 
 
@@ -323,17 +322,18 @@ class Main_Character:
             if axe.update():
                 self.thrown_axes.remove(axe)
 
-    def draw(self):
-        # ... (draw, get_bb, handle_event, axe, throw_axe, clear_projectiles 원본과 동일) ...
-        self.state_machine.draw()
+    def draw(self, camera_y):
+        self.state_machine.draw(camera_y)
         for axe in self.axes:
-            axe.draw()
+            axe.draw(camera_y)
         for axe in self.thrown_axes:
-            axe.draw()
-        draw_rectangle(*self.get_bb())
+            axe.draw(camera_y)
+
+        l, b, r, t = self.get_bb()
+        draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
-        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
+        return self.x - 30, self.y - 30, self.x + 30, self.y + 30
 
     def handle_event(self, event):
         # 키 상태 추적

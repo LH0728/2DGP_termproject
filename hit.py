@@ -1,3 +1,5 @@
+from math import floor
+
 from pico2d import *
 
 class HitEffect:
@@ -19,11 +21,12 @@ class HitEffect:
             return True  # 삭제 신호
         return False # 아직 활성 상태
 
-    def draw(self):
+    def draw(self, camera_y):
         """
         이펙트 이미지를 그립니다.
         """
+        draw_y = floor(self.y - camera_y)
         # 이미지를 살짝 크게 그려서 잘 보이게 합니다.
-        self.image.draw(self.x, self.y, 200, 200)
+        self.image.draw(self.x, draw_y, 200, 200)
 
 

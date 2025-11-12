@@ -12,7 +12,7 @@ class Village:
         # image3를 image2 아래 빈 공간에 깔 x 좌표들
         self.ground_x_positions = [150, 450, 750, 1050]
 
-    def draw(self):
+    def draw(self, camera_y):
         # image3를 image2 아래쪽 빈 공간에 쭉 깔기 (y=100 아래 공간)
         for x_pos in self.ground_x_positions:
             self.image3.draw(x_pos, 50, 300, 115)

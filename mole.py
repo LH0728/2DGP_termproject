@@ -1,6 +1,7 @@
 from pico2d import load_image, clamp, get_time, draw_rectangle
 import random
 import math
+from math import floor
 
 class Mole:
     def __init__(self, x, y, speed):
@@ -108,7 +109,7 @@ class Mole:
         else:
             self.face_dir = -1
 
-    def draw(self):
+    def draw(self, camera_y):
         if self.visible:
             if self.state == 'attack':
                 frame_x = self.frame * self.attack_frame_width

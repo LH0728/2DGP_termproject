@@ -14,6 +14,7 @@ dungeon_world = []
 current_world = None
 hit_effects = []
 
+camera_y = 0.0
 
 def collide(a, b):
     left_a, bottom_a, right_a, top_a = a.get_bb()
@@ -54,6 +55,8 @@ def setup_worlds():
     global village_world, mine_world, mine_2_world, dungeon_world, current_world
     global main_character, hit_effects
 
+    global camera_y
+    camera_y = 0.0
     # 캐릭터 생성 (한 번만)
     main_character = Main_Character()
 
@@ -79,6 +82,7 @@ def setup_worlds():
 
 def update_world():
     global current_world, hit_effects
+    global camera_y
     for o in current_world:
         if isinstance(o, (Mine, Mine_2)):
             o.update(main_character)
@@ -110,9 +114,17 @@ def update_world():
         # [수정] y좌표 리셋
         main_character.y = 150
 
+    if current_world == mine_2_world:
+        target_camera_y = main_character.y - 300.0
+        camera_y = min(0.0, target_camera_y)
+        mine_2_map = mine_2_world[0]  # mine_2 객체
+        mine_2_map.procedural_update(camera_y)
+
 def change_world(new_world):
     """월드를 전환하는 함수"""
     global current_world
+    global camera_y
+    camera_y = 0.0
     current_world = new_world
     main_character.clear_projectiles()
     hit_effects.clear()
@@ -217,12 +229,13 @@ def check_collisions():
 
 
 def render_world():
+    global camera_y
     clear_canvas()
     for o in current_world:
-        o.draw()
-    # 피격 이펙트 그리기
+        o.draw(camera_y)
+
     for effect in hit_effects:
-        effect.draw()
+        effect.draw(camera_y)
     update_canvas()
 
 open_canvas(1200, 800)

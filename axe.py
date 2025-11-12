@@ -65,22 +65,24 @@ class Axe:
 
         return False
 
-    def draw(self):
+    def draw(self, camera_y):
         # 프레임에 맞는 이미지 클리핑
         frame_x = self.frame * 30
 
         # 오른쪽을 기준으로 그리기 각도 계산
         # (곡괭이 날이 스윙 방향을 향하도록 45도 정도 빼줍니다)
         base_draw_angle = self.angle_rad - math.radians(45)
-
+        draw_y = self.y - camera_y
         # 캐릭터 방향에 따라 이미지 회전 및 반전 적용
         if self.parent.face_dir == 1:  # 오른쪽
-            Axe.image.clip_composite_draw(frame_x, 0, 30, 24, base_draw_angle, '', self.x, self.y, 100, 100)
+            Axe.image.clip_composite_draw(frame_x, 0, 30, 24, base_draw_angle, '', self.x, draw_y, 100, 100)
         else:  # 왼쪽
             # 왼쪽을 볼 때는 오른쪽 각도를 반전시키고, 이미지를 수평으로 뒤집습니다.
             mirrored_draw_angle = -base_draw_angle
-            Axe.image.clip_composite_draw(frame_x, 0, 30, 24, mirrored_draw_angle, 'h', self.x, self.y, 100, 100)
-        draw_rectangle(*self.get_bb())
+            Axe.image.clip_composite_draw(frame_x, 0, 30, 24, mirrored_draw_angle, 'h', self.x, draw_y, 100, 100)
+
+        l, b, r, t = self.get_bb()
+        draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
@@ -120,11 +122,12 @@ class ThrownAxe:
 
         return False  # 계속 업데이트
 
-    def draw(self):
-        # ThrownAxe는 하나의 이미지를 계속 회전시키므로 프레임 계산은 필요 없습니다.
-        # 이미지의 중앙(15, 12)을 기준으로 그립니다.
-        ThrownAxe.image.clip_composite_draw(0, 0, 30, 24, self.angle_rad, '', self.x, self.y, 100, 100)
-        draw_rectangle(*self.get_bb())
+    def draw(self, camera_y):
+        draw_y = self.y - camera_y
+        ThrownAxe.image.clip_composite_draw(0, 0, 30, 24, self.angle_rad, '', self.x, draw_y, 100, 100)  # [수정]
+
+        l, b, r, t = self.get_bb()
+        draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
