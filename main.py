@@ -3,12 +3,15 @@ from character import Main_Character
 from village import Village
 from mine import Mine
 from dungeon import Dungeon
+from hit import HitEffect
 
 # 월드 상태
 village_world = []
 mine_world = []
 dungeon_world = []
 current_world = None
+hit_effects = []
+
 
 def collide(a, b):
     left_a, bottom_a, right_a, top_a = a.get_bb()
@@ -37,7 +40,7 @@ def handle_events():
 
 def setup_worlds():
     global village_world, mine_world, dungeon_world, current_world
-    global main_character
+    global main_character, hit_effects
 
     # 캐릭터 생성 (한 번만)
     main_character = Main_Character()
@@ -56,14 +59,18 @@ def setup_worlds():
 
     # 시작은 마을 월드
     current_world = village_world
+    hit_effects = []
 
 def update_world():
-    global current_world, village_world, mine_world, dungeon_world
+    global current_world, village_world, mine_world, dungeon_world, hit_effects
     for o in current_world:
         if isinstance(o, Mine):
             o.update(main_character)
         else:
             o.update()
+
+    # 피격 이펙트 업데이트 및 제거
+    hit_effects = [effect for effect in hit_effects if not effect.update()]
 
     # 충돌 처리 (광산 월드에서만)
     if current_world == mine_world:
@@ -79,6 +86,9 @@ def update_world():
                     if mole.hit(main_character.face_dir):
                         if mole not in moles_to_remove:
                             moles_to_remove.append(mole)
+                    # 피격 이펙트 생성
+                    hit_effects.append(HitEffect(mole.x, mole.y))
+
 
         # 2. 던지는 도끼와 두더지 충돌
         for thrown_axe in main_character.thrown_axes:
@@ -92,6 +102,10 @@ def update_world():
                     # 던진 도끼는 충돌 시 항상 제거
                     if thrown_axe not in axes_to_remove:
                         axes_to_remove.append(thrown_axe)
+
+                    # 피격 이펙트 생성
+                    hit_effects.append(HitEffect(mole.x, mole.y))
+
 
         # 충돌된 객체들 제거
         for mole in moles_to_remove:
@@ -107,24 +121,31 @@ def update_world():
         current_world = mine_world
         main_character.x = 10 # 화면 왼쪽에서 나타남
         main_character.clear_projectiles()
+        hit_effects.clear()
     elif current_world == mine_world and main_character.x < 0:
         current_world = village_world
         main_character.x = 1190 # 화면 오른쪽에서 나타남
         main_character.clear_projectiles()
+        hit_effects.clear()
     elif current_world == village_world and main_character.x < 0:
         current_world = dungeon_world
         main_character.x = 1190 # 화면 오른쪽에서 나타남
         main_character.clear_projectiles()
+        hit_effects.clear()
     elif current_world == dungeon_world and main_character.x > 1200:
         current_world = village_world
         main_character.x = 10  # 화면 오른쪽에서 나타남
         main_character.clear_projectiles()
+        hit_effects.clear()
 
 
 def render_world():
     clear_canvas()
     for o in current_world:
         o.draw()
+    # 피격 이펙트 그리기
+    for effect in hit_effects:
+        effect.draw()
     update_canvas()
 
 open_canvas(1200, 800)

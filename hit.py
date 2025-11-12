@@ -6,7 +6,7 @@ class HitEffect:
 
     def __init__(self, x, y):
         if HitEffect.image is None:
-            HitEffect.image = load_image('Hit_10.png')
+            HitEffect.image = load_image('wave2.png')
         self.x, self.y = x, y
         self.spawn_time = get_time()
 
@@ -24,6 +24,6 @@ class HitEffect:
         이펙트 이미지를 그립니다.
         """
         # 이미지를 살짝 크게 그려서 잘 보이게 합니다.
-        self.image.draw(self.x, self.y, 100, 100)
+        self.image.draw(self.x, self.y, 200, 200)
 
 
