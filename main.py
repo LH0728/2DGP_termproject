@@ -5,6 +5,7 @@ from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
 from mine_2 import Mine_2, Mineral
+import random
 
 # 월드 상태
 village_world = []
@@ -223,8 +224,9 @@ def check_collisions():
         for soil in soils_to_remove:
             if soil in mine_2.soils:
                 mine_2.soils.remove(soil)
-                mineral = Mineral(soil.x, soil.y + 20)
-                current_world.append(mineral)
+                if random.random() < 0.1:
+                    mineral = Mineral(soil.x, soil.y + 20)
+                    current_world.append(mineral)
         for thrown_axe in axes_to_remove:
             if thrown_axe in main_character.thrown_axes:
                 main_character.thrown_axes.remove(thrown_axe)

@@ -1,5 +1,6 @@
 from pico2d import *
 import random
+import math
 
 
 class Mine_2:
@@ -96,11 +97,15 @@ class Soil:
 
 class Mineral:
     image = None
+    MINERAL_SPEED = 3.0
+    MINERAL_RANGE = 8
 
     def __init__(self, x, y):
         if Mineral.image is None:
             Mineral.image = load_image('21203.png')
-        self.x, self.y = x, y
+        self.x = x
+        self.original_y = y - 20
+        self.y = y
 
     def draw(self, camera_y):
         draw_y = self.y - camera_y
@@ -109,7 +114,10 @@ class Mineral:
         draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def update(self, character):
-        pass
+        time_based_offset = math.sin(get_time() * Mineral.MINERAL_SPEED + self.x)
+        MINERAL_offset = time_based_offset * Mineral.MINERAL_RANGE
+        self.y = self.original_y + MINERAL_offset
+
 
     def get_bb(self):
         return self.x - 15, self.y - 15, self.x + 15, self.y + 15
