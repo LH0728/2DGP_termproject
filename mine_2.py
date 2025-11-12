@@ -84,7 +84,7 @@ class Soil:
         draw_y = self.y - camera_y
         self.image.clip_draw(3, self.image.h - 45, 42, 42, self.x, draw_y, 60, 60)
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b - camera_y, r, t - camera_y)
+        #draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def update(self, character):
         pass
@@ -111,7 +111,7 @@ class Mineral:
         draw_y = self.y - camera_y
         self.image.draw(self.x, draw_y)
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b - camera_y, r, t - camera_y)
+        #draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def update(self, character):
         time_based_offset = math.sin(get_time() * Mineral.MINERAL_SPEED + self.x)

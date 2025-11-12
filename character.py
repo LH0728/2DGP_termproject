@@ -330,7 +330,7 @@ class Main_Character:
             axe.draw(camera_y)
 
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b - camera_y, r, t - camera_y)
+        #draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50

@@ -123,7 +123,7 @@ class Mole:
                     self.image.clip_draw(frame_x, 0, self.wander_frame_width, self.wander_frame_height, self.x, self.y, self.wander_frame_width * 3, self.wander_frame_height * 3)
                 else: # 오른쪽을 볼 때
                     self.image.clip_composite_draw(frame_x, 0, self.wander_frame_width, self.wander_frame_height, 0, 'h', self.x, self.y, self.wander_frame_width * 3, self.wander_frame_height * 3)
-            draw_rectangle(*self.get_bb())
+            #draw_rectangle(*self.get_bb())
 
     def get_bb(self):
         # 두더지 크기 (너비 28*3, 높이 18*3)에 맞는 바운딩 박스

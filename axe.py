@@ -82,7 +82,7 @@ class Axe:
             Axe.image.clip_composite_draw(frame_x, 0, 30, 24, mirrored_draw_angle, 'h', self.x, draw_y, 100, 100)
 
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b - camera_y, r, t - camera_y)
+        #draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
@@ -127,7 +127,7 @@ class ThrownAxe:
         ThrownAxe.image.clip_composite_draw(0, 0, 30, 24, self.angle_rad, '', self.x, draw_y, 100, 100)  # [수정]
 
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b - camera_y, r, t - camera_y)
+        #draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
