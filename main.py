@@ -78,7 +78,7 @@ def setup_worlds():
     hit_effects = []
 
 def update_world():
-    global current_world, village_world, mine_world, dungeon_world, hit_effects
+    global current_world, hit_effects
     for o in current_world:
         if isinstance(o, (Mine, Mine_2)):
             o.update(main_character)
@@ -87,50 +87,6 @@ def update_world():
 
     # 피격 이펙트 업데이트 및 제거
     hit_effects = [effect for effect in hit_effects if not effect.update()]
-
-    # 충돌 처리 (광산 월드에서만)
-    if current_world == mine_world:
-        mine = mine_world[0]  # Mine 객체 가져오기
-        moles_to_remove = []
-        axes_to_remove = []
-
-        # 1. 휘두르는 도끼와 두더지 충돌
-        for axe in main_character.axes:
-            for mole in mine.moles:
-                if collide(axe, mole):
-                    # mole.hit()을 호출하고, True를 반환하면(죽었으면) 제거 목록에 추가
-                    if mole.hit(main_character.face_dir):
-                        if mole not in moles_to_remove:
-                            moles_to_remove.append(mole)
-                    # 피격 이펙트 생성
-                    hit_effects.append(HitEffect(mole.x, mole.y))
-
-
-        # 2. 던지는 도끼와 두더지 충돌
-        for thrown_axe in main_character.thrown_axes:
-            for mole in mine.moles:
-                if collide(thrown_axe, mole):
-                    # mole.hit()을 호출하고, True를 반환하면(죽었으면) 제거 목록에 추가
-                    if mole.hit(thrown_axe.direction):
-                        if mole not in moles_to_remove:
-                            moles_to_remove.append(mole)
-
-                    # 던진 도끼는 충돌 시 항상 제거
-                    if thrown_axe not in axes_to_remove:
-                        axes_to_remove.append(thrown_axe)
-
-                    # 피격 이펙트 생성
-                    hit_effects.append(HitEffect(mole.x, mole.y))
-
-
-        # 충돌된 객체들 제거
-        for mole in moles_to_remove:
-            if mole in mine.moles:
-                mine.moles.remove(mole)
-        for thrown_axe in axes_to_remove:
-            if thrown_axe in main_character.thrown_axes:
-                main_character.thrown_axes.remove(thrown_axe)
-
 
     # 월드 전환 로직 (좌우)
     if current_world == village_world and main_character.x > 1200:
@@ -154,6 +110,83 @@ def change_world(new_world):
     hit_effects.clear()
 
 
+def check_collisions():
+    global current_world, main_character
+
+    # 광산 1 충돌 처리
+    if current_world == mine_world:
+        mine = mine_world[0]
+        moles_to_remove = []
+        axes_to_remove = []
+
+        # 1. 휘두르는 도끼와 두더지 충돌
+        for axe in main_character.axes:
+            for mole in mine.moles:
+                if mole.hp <= 0: continue
+                if collide(axe, mole):
+                    if mole.hit(main_character.face_dir):
+                        if mole not in moles_to_remove:
+                            moles_to_remove.append(mole)
+                    hit_effects.append(HitEffect(mole.x, mole.y))
+
+        # 2. 던지는 도끼와 두더지 충돌
+        for thrown_axe in main_character.thrown_axes:
+            if thrown_axe in axes_to_remove:
+                continue
+            for mole in mine.moles:
+                if mole.hp <= 0: continue
+                if collide(thrown_axe, mole):
+                    if mole.hit(thrown_axe.direction):
+                        if mole not in moles_to_remove:
+                            moles_to_remove.append(mole)
+                    axes_to_remove.append(thrown_axe)
+                    hit_effects.append(HitEffect(mole.x, mole.y))
+                    break
+
+        # 충돌된 객체들 제거
+        for mole in moles_to_remove:
+            if mole in mine.moles:
+                mine.moles.remove(mole)
+        for thrown_axe in axes_to_remove:
+            if thrown_axe in main_character.thrown_axes:
+                main_character.thrown_axes.remove(thrown_axe)
+
+    # 광산 2 충돌 처리
+    elif current_world == mine_2_world:
+        mine_2 = mine_2_world[0]
+        soils_to_remove = []
+        axes_to_remove = []
+
+        # 1. 휘두르는 도끼와 흙 블록 충돌
+        for axe in main_character.axes:
+            for soil in mine_2.soils:
+                if collide(axe, soil):
+                    if soil not in soils_to_remove:
+                        soils_to_remove.append(soil)
+                    # 피격 이펙트 생성
+                    hit_effects.append(HitEffect(soil.x, soil.y))
+
+        # 2. 던지는 도끼와 흙 블록 충돌
+        for thrown_axe in main_character.thrown_axes:
+            if thrown_axe in axes_to_remove:
+                continue
+            for soil in mine_2.soils:
+                if collide(thrown_axe, soil):
+                    if soil not in soils_to_remove:
+                        soils_to_remove.append(soil)
+                    axes_to_remove.append(thrown_axe)
+                    hit_effects.append(HitEffect(soil.x, soil.y))
+                    break # 도끼 하나당 블록 하나만 파괴
+
+        # 충돌된 객체들 제거
+        for soil in soils_to_remove:
+            if soil in mine_2.soils:
+                mine_2.soils.remove(soil)
+        for thrown_axe in axes_to_remove:
+            if thrown_axe in main_character.thrown_axes:
+                main_character.thrown_axes.remove(thrown_axe)
+
+
 def render_world():
     clear_canvas()
     for o in current_world:
@@ -172,6 +205,7 @@ setup_worlds()
 while running:
     handle_events()
     update_world()
+    check_collisions() # 충돌 검사 함수 호출
     render_world()
     delay(0.01)
 
