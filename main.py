@@ -40,7 +40,7 @@ def handle_events():
             # mine에서 mine_2로 이동
             if current_world == mine_world and 500 < main_character.x < 700:
                 change_world(mine_2_world)
-                main_character.x, main_character.y = 600, 150 # mine_2 시작 위치
+                main_character.x, main_character.y = 600, 200 # mine_2 시작 위치
         elif event.type == SDL_KEYDOWN and event.key == SDLK_DOWN:
             # mine_2에서 mine으로 이동
             if current_world == mine_2_world:
