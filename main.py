@@ -4,7 +4,7 @@ from village import Village
 from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
-from mine_2 import Mine_2
+from mine_2 import Mine_2, Mineral
 
 # 월드 상태
 village_world = []
@@ -84,7 +84,7 @@ def update_world():
     global current_world, hit_effects
     global camera_y
     for o in current_world:
-        if isinstance(o, (Mine, Mine_2)):
+        if isinstance(o, (Mine, Mine_2, Mineral)):
             o.update(main_character)
         else:
             o.update()
@@ -223,6 +223,8 @@ def check_collisions():
         for soil in soils_to_remove:
             if soil in mine_2.soils:
                 mine_2.soils.remove(soil)
+                mineral = Mineral(soil.x, soil.y + 20)
+                current_world.append(mineral)
         for thrown_axe in axes_to_remove:
             if thrown_axe in main_character.thrown_axes:
                 main_character.thrown_axes.remove(thrown_axe)

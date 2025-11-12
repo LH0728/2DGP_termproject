@@ -9,6 +9,7 @@ class Mine_2:
         self.image = load_image('bg4_finish.png')
         # Soil 객체를 담을 리스트 생성
         self.soils = []
+        self.Minerals = []
         # Soil 객체의 생성 간격을 실제 크기인 60x60으로 수정합니다.
         soil_width, soil_height = 60, 60
         # y좌표 0부터 150까지, x좌표 0부터 1200까지 Soil 객체로 채우기
@@ -61,8 +62,8 @@ class Mine_2:
 
     def generate_new_row(self, y):
         for x in range(0, 1200, self.soil_width):
-            if random.random() < 0.1:
-                continue
+            #if random.random() < 0.1:
+            #   continue
             self.soils.append(Soil(x + self.soil_width // 2, y))
 
 
@@ -91,3 +92,24 @@ class Soil:
         # 객체의 중심 좌표(self.x, self.y)와 크기(60x60)를 기반으로
         # 왼쪽, 아래, 오른쪽, 위쪽 좌표를 반환합니다.
         return self.x - 30, self.y - 30, self.x + 30, self.y + 30
+
+
+class Mineral:
+    image = None
+
+    def __init__(self, x, y):
+        if Mineral.image is None:
+            Mineral.image = load_image('21203.png')
+        self.x, self.y = x, y
+
+    def draw(self, camera_y):
+        draw_y = self.y - camera_y
+        self.image.draw(self.x, draw_y)
+        l, b, r, t = self.get_bb()
+        draw_rectangle(l, b - camera_y, r, t - camera_y)
+
+    def update(self, character):
+        pass
+
+    def get_bb(self):
+        return self.x - 15, self.y - 15, self.x + 15, self.y + 15

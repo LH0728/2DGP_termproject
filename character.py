@@ -333,7 +333,7 @@ class Main_Character:
         draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def get_bb(self):
-        return self.x - 30, self.y - 30, self.x + 30, self.y + 30
+        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
 
     def handle_event(self, event):
         # 키 상태 추적
