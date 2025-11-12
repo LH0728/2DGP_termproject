@@ -4,10 +4,12 @@ from village import Village
 from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
+from mine_2 import Mine_2
 
 # 월드 상태
 village_world = []
 mine_world = []
+mine_2_world = []
 dungeon_world = []
 current_world = None
 hit_effects = []
@@ -34,12 +36,22 @@ def handle_events():
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_UP:
+            # mine에서 mine_2로 이동
+            if current_world == mine_world and 500 < main_character.x < 700:
+                change_world(mine_2_world)
+                main_character.x, main_character.y = 600, 150 # mine_2 시작 위치
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_DOWN:
+            # mine_2에서 mine으로 이동
+            if current_world == mine_2_world:
+                change_world(mine_world)
+                main_character.x, main_character.y = 600, 150 # mine 시작 위치
         else:
             # 현재 월드의 캐릭터에게만 이벤트를 전달합니다.
             main_character.handle_event(event)
 
 def setup_worlds():
-    global village_world, mine_world, dungeon_world, current_world
+    global village_world, mine_world, mine_2_world, dungeon_world, current_world
     global main_character, hit_effects
 
     # 캐릭터 생성 (한 번만)
@@ -53,6 +65,10 @@ def setup_worlds():
     mine = Mine()
     mine_world = [mine, main_character]
 
+    # 광산2 월드 설정
+    mine_2 = Mine_2()
+    mine_2_world = [mine_2, main_character]
+
     # 던전 월드 설정
     dungeon = Dungeon()
     dungeon_world = [dungeon, main_character]
@@ -64,7 +80,7 @@ def setup_worlds():
 def update_world():
     global current_world, village_world, mine_world, dungeon_world, hit_effects
     for o in current_world:
-        if isinstance(o, Mine):
+        if isinstance(o, (Mine, Mine_2)):
             o.update(main_character)
         else:
             o.update()
@@ -116,27 +132,26 @@ def update_world():
                 main_character.thrown_axes.remove(thrown_axe)
 
 
-    # 월드 전환 로직
+    # 월드 전환 로직 (좌우)
     if current_world == village_world and main_character.x > 1200:
-        current_world = mine_world
+        change_world(mine_world)
         main_character.x = 10 # 화면 왼쪽에서 나타남
-        main_character.clear_projectiles()
-        hit_effects.clear()
     elif current_world == mine_world and main_character.x < 0:
-        current_world = village_world
+        change_world(village_world)
         main_character.x = 1190 # 화면 오른쪽에서 나타남
-        main_character.clear_projectiles()
-        hit_effects.clear()
     elif current_world == village_world and main_character.x < 0:
-        current_world = dungeon_world
+        change_world(dungeon_world)
         main_character.x = 1190 # 화면 오른쪽에서 나타남
-        main_character.clear_projectiles()
-        hit_effects.clear()
     elif current_world == dungeon_world and main_character.x > 1200:
-        current_world = village_world
+        change_world(village_world)
         main_character.x = 10  # 화면 오른쪽에서 나타남
-        main_character.clear_projectiles()
-        hit_effects.clear()
+
+def change_world(new_world):
+    """월드를 전환하는 함수"""
+    global current_world
+    current_world = new_world
+    main_character.clear_projectiles()
+    hit_effects.clear()
 
 
 def render_world():
