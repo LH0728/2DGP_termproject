@@ -91,16 +91,24 @@ def update_world():
     # 월드 전환 로직 (좌우)
     if current_world == village_world and main_character.x > 1200:
         change_world(mine_world)
-        main_character.x = 10 # 화면 왼쪽에서 나타남
+        main_character.x = 10  # 화면 왼쪽에서 나타남
+        # [수정] y좌표 리셋
+        main_character.y = 150
     elif current_world == mine_world and main_character.x < 0:
         change_world(village_world)
-        main_character.x = 1190 # 화면 오른쪽에서 나타남
+        main_character.x = 1190  # 화면 오른쪽에서 나타남
+        # [수정] y좌표 리셋
+        main_character.y = 150
     elif current_world == village_world and main_character.x < 0:
         change_world(dungeon_world)
-        main_character.x = 1190 # 화면 오른쪽에서 나타남
+        main_character.x = 1190  # 화면 오른쪽에서 나타남
+        # [수정] y좌표 리셋
+        main_character.y = 150
     elif current_world == dungeon_world and main_character.x > 1200:
         change_world(village_world)
         main_character.x = 10  # 화면 오른쪽에서 나타남
+        # [수정] y좌표 리셋
+        main_character.y = 150
 
 def change_world(new_world):
     """월드를 전환하는 함수"""
@@ -108,6 +116,23 @@ def change_world(new_world):
     current_world = new_world
     main_character.clear_projectiles()
     hit_effects.clear()
+
+    current_world = new_world
+    main_character.clear_projectiles()
+    hit_effects.clear()
+
+    if new_world != mine_2_world:
+        main_character.ground_y = 150
+
+        # mine_2가 아닌 곳(마을, 광산1, 던전)에서는 y=150을 보장
+    if new_world == village_world or new_world == mine_world or new_world == dungeon_world:
+        # 캐릭터가 점프/낙하 중(is_jumping) 상태로 맵을 이동할 수 있으므로
+        # y좌표를 강제로 150으로 맞추고 점프 상태를 해제합니다.
+        main_character.y = 150
+        main_character.is_jumping = False
+        main_character.jump_velocity = 0
+
+
 
 
 def check_collisions():
@@ -157,6 +182,10 @@ def check_collisions():
         soils_to_remove = []
         axes_to_remove = []
 
+
+
+
+        # --- 곡괭이와 흙 블록 충돌 처리 ---
         # 1. 휘두르는 도끼와 흙 블록 충돌
         for axe in main_character.axes:
             for soil in mine_2.soils:

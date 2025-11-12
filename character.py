@@ -2,31 +2,60 @@ from pico2d import *
 from state_machine import StateMachine
 from axe import *
 
+
 def right_up(e):
-    return e[0] == 'INPUT'and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
+
+
 def right_down(e):
-    return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
+
+
 def left_down(e):
-    return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_LEFT
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_LEFT
+
+
 def left_up(e):
-    return e[0] == 'INPUT'and e[1].type == SDL_KEYUP and e[1].key == SDLK_LEFT
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_LEFT
+
+
 def space_down(e):
-    return e[0] == 'INPUT'and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
+
+
 def land_event(e):
     return e[0] == 'LAND'
+
+
 def land_to_run(e):
     return e[0] == 'LAND_RUN'
+
+
 def land_to_idle(e):
     return e[0] == 'LAND_IDLE'
+
+
 def a_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
+
+
 def a_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_a
+
+
 def s_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_s
 
 
+# --- [추가] 낙하 이벤트 ---
+def fall(e):
+    return e[0] == 'FALL'
+
+
+# --- ---
+
 class Picking:
+    # ... (Picking 클래스 원본과 동일 - 수정 없음) ...
     def __init__(self, character):
         self.character = character
 
@@ -34,7 +63,21 @@ class Picking:
         self.character.axe()
 
     def do(self):
-        pass  # 애니메이션은 Main_Character.update()에서 처리
+        character_feet_y = self.character.y - 50
+        if self.character.y > self.character.ground_y+5:
+            if not self.character.is_jumping:
+                self.character.is_jumping = True
+                self.character.jump_velocity = 0  # 낙하 시작
+
+            self.character.y += self.character.jump_velocity
+            self.character.jump_velocity -= 1  # 중력
+            character_feet_y = self.character.y - 50
+
+            if self.character.y <= self.character.ground_y:
+                self.character.y = self.character.ground_y + 50
+                self.character.is_jumping = False
+                self.character.jump_velocity = 0
+        # --- ---
 
     def exit(self, e):
         pass
@@ -58,16 +101,23 @@ class JUMP:
         self.character = character
 
     def enter(self, e):
-        if not self.character.is_jumping:  # 처음 점프할 때만
-            self.character.jump_velocity = 15
+        # --- [수정] 점프와 낙하 구분 ---
+        if space_down(e):  # '점프'
+            if not self.character.is_jumping:  # 땅에 있을 때만 점프 가능
+                self.character.jump_velocity = 15
+                self.character.is_jumping = True
+        elif fall(e):  # '낙하'
+            if not self.character.is_jumping:  # IDLE/RUN에서 떨어짐
+                self.character.jump_velocity = 0  # 속도 없이 중력만 받음
             self.character.is_jumping = True
+        # --- ---
 
         # 점프 중 방향키 입력 처리
         if right_down(e):
             self.character.dir = self.character.face_dir = 1
         elif left_down(e):
             self.character.dir = self.character.face_dir = -1
-        # ← space_down일 때는 기존 dir 유지 (추가 조건 불필요)
+        # ← space_down 이나 fall(e)일 때는 기존 dir 유지
 
     def do(self):
         # 좌우 이동 (점프 중에도 가능)
@@ -77,9 +127,9 @@ class JUMP:
         self.character.y += self.character.jump_velocity
         self.character.jump_velocity -= 1  # 중력
 
-        # 착지 체크
-        if self.character.y <= 150:
-            self.character.y = 150
+        # --- [수정] 착지 체크 (ground_y 사용) ---
+        if self.character.y <= self.character.ground_y:
+            self.character.y = self.character.ground_y
             self.character.is_jumping = False
 
             # 방향키 상태에 따라 다른 이벤트 발생
@@ -87,6 +137,7 @@ class JUMP:
                 self.character.state_machine.handle_state_event(('LAND_RUN', None))
             else:
                 self.character.state_machine.handle_state_event(('LAND_IDLE', None))
+        # --- ---
 
     def exit(self, e):
         self.character.jump_velocity = 0
@@ -98,6 +149,7 @@ class JUMP:
             self.character.dir = 0
 
     def draw(self):
+        # ... (draw 함수 원본과 동일) ...
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
@@ -126,10 +178,15 @@ class Run:
         # frame 증가는 Main_Character.update()에서 제어함
         self.character.x += self.character.dir * 10
 
+        if (self.character.y - 50) > self.character.ground_y + 5:
+            self.character.state_machine.handle_state_event(('FALL', None))
+
+
     def exit(self, e):
         pass
 
     def draw(self):
+        # ... (draw 함수 원본과 동일) ...
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
@@ -142,22 +199,30 @@ class Run:
                 0, 'h',
                 self.character.x, self.character.y, 150, 150
             )
+
+
 class Idle:
 
-    def __init__(self,character):
+    def __init__(self, character):
         self.character = character
 
-    def enter(self,e):
+    def enter(self, e):
         self.character.dir = 0
 
-    def exit(self,e):
+    def exit(self, e):
         pass
 
     def do(self):
         # frame 증가는 Main_Character.update()에서 제어함
+
+        # --- [추가] 중력 체크 ---
+        if (self.character.y - 50) > self.character.ground_y + 5:
+            self.character.state_machine.handle_state_event(('FALL', None))
+
         pass
 
     def draw(self):
+        # ... (draw 함수 원본과 동일) ...
         if self.character.face_dir == 1:
             self.character.image.clip_draw(
                 self.character.frame * 60, 0, 60, 60,
@@ -170,6 +235,8 @@ class Idle:
                 0, 'h',
                 self.character.x, self.character.y, 150, 150
             )
+
+
 class Main_Character:
     def __init__(self):
         self.x, self.y = 600, 150
@@ -184,7 +251,11 @@ class Main_Character:
         self.key_s_pressed = False
         self.prev_state = None
         self.axes = []  # 도끼 리스트 추가
-        self.thrown_axes = [] # 던지는 도끼 리스트
+        self.thrown_axes = []  # 던지는 도끼 리스트
+
+        # --- [추가] 현재 밟고 있는 땅의 높이 ---
+        self.ground_y = 150
+        # --- ---
 
         self.IDLE = Idle(self)
         self.RUN = Run(self)
@@ -200,19 +271,22 @@ class Main_Character:
         self.anim_delay = 0.15
         self.frame_count = 3
 
+        # --- [수정] 상태 머신에 fall 이벤트 추가 ---
         self.state_machine = StateMachine(
             self.IDLE, {
                 self.IDLE: {
                     right_down: self.RUN, left_down: self.RUN,
                     space_down: self.JUMP,
                     a_down: self.PICKING,
-                    s_down: self.IDLE # 던지기 후에도 IDLE 유지
+                    s_down: self.IDLE,  # 던지기 후에도 IDLE 유지
+                    fall: self.JUMP  # [추가]
                 },
                 self.RUN: {
                     right_up: self.IDLE, left_up: self.IDLE,
                     space_down: self.JUMP,
                     a_down: self.PICKING,
-                    s_down: self.RUN # 던지기 후에도 RUN 유지
+                    s_down: self.RUN,  # 던지기 후에도 RUN 유지
+                    fall: self.JUMP  # [추가]
                 },
                 self.JUMP: {
                     right_down: self.JUMP, left_down: self.JUMP,
@@ -224,6 +298,8 @@ class Main_Character:
                 }
             }
         )
+        # --- ---
+
     def update(self):
         # 시간 누적 계산
         now = get_time()
@@ -248,6 +324,7 @@ class Main_Character:
                 self.thrown_axes.remove(axe)
 
     def draw(self):
+        # ... (draw, get_bb, handle_event, axe, throw_axe, clear_projectiles 원본과 동일) ...
         self.state_machine.draw()
         for axe in self.axes:
             axe.draw()
