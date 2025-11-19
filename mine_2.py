@@ -8,6 +8,7 @@ class Mine_2:
         self.soil_width, self.soil_height = 60, 60
         self.bg_y = 400
         self.image = load_image('bg4_finish.png')
+        self.image2 = load_image('bg1_loop.png')
         # Soil 객체를 담을 리스트 생성
         self.soils = []
         self.Minerals = []
@@ -20,11 +21,29 @@ class Mine_2:
         self.lowest_generated_y = 0
 
     def draw(self, camera_y):
-        draw_bg_y_1 = self.bg_y - camera_y
-        draw_bg_y_2 = self.bg_y - 800 - camera_y  # 800px 아래에 다음 배경
+        if camera_y > -800:
+            self.image.draw(600, 400 - camera_y, 1200, 800)
 
-        self.image.draw(600, draw_bg_y_1, 1200, 800)
-        self.image.draw(600, draw_bg_y_2, 1200, 800)
+        screen_bottom_y = camera_y
+
+        if screen_bottom_y < 0:
+            loop_h = self.image2.h
+
+            screen_top_y = camera_y + 800
+            visible_top = min(0, screen_top_y)
+
+            start_depth = -visible_top
+            end_depth = -screen_bottom_y
+
+            start_idx = int(start_depth // loop_h)
+            end_idx = int(end_depth // loop_h) + 1
+
+            for i in range(start_idx, end_idx + 1):
+
+                world_y = - (i * loop_h) - (loop_h // 2)
+
+                draw_y = world_y - camera_y
+                self.image2.draw(600, draw_y, 1200, loop_h)
 
         for soil in self.soils:
             soil.draw(camera_y)
@@ -122,9 +141,9 @@ class Mineral:
             elif self.type == 2:
                 Mineral.images[2] = load_image('21204.png')  # 10%
             elif self.type == 3:
-                Mineral.images[3] = load_image('21204.png')  # 5%
+                Mineral.images[3] = load_image('21205.png')  # 5%
             elif self.type == 4:
-                Mineral.images[4] = load_image('21204.png')  # 1% (전설)
+                Mineral.images[4] = load_image('21206.png')  # 1% (전설)
 
         # 결정된 이미지를 현재 객체의 이미지로 설정
         self.image = Mineral.images[self.type]
@@ -145,4 +164,6 @@ class Mineral:
         self.y = self.original_y + MINERAL_offset
 
     def get_bb(self):
-        return self.x - 15, self.y - 15, self.x + 15, self.y + 15
+        half_width = (self.image.w * self.scale) / 2
+        half_height = (self.image.h * self.scale) / 2
+        return self.x - half_width, self.y - half_height, self.x + half_width, self.y + half_height
