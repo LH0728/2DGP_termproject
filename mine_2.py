@@ -96,28 +96,53 @@ class Soil:
 
 
 class Mineral:
-    image = None
+    # 이미지를 종류별로 저장할 딕셔너리 (최초 로딩 후 재사용)
+    images = {}
+
     MINERAL_SPEED = 3.0
     MINERAL_RANGE = 8
 
     def __init__(self, x, y):
-        if Mineral.image is None:
-            Mineral.image = load_image('21203.png')
         self.x = x
         self.original_y = y - 20
         self.y = y
 
+        # 1번(80), 2번(10), 3번(5), 4번(1)의 가중치를 설정합니다.
+        # choices 함수는 weights 비율에 따라 알아서 확률을 계산해줍니다.
+        mineral_types = [1, 2, 3, 4]
+        weights = [80, 10, 5, 1]
+
+        # k=1은 하나를 뽑겠다는 뜻이며, 리스트로 반환되므로 [0]으로 값을 꺼냅니다.
+        self.type = random.choices(mineral_types, weights=weights, k=1)[0]
+
+        # 해당 타입의 이미지가 아직 로딩되지 않았다면 로딩합니다.
+        if self.type not in Mineral.images:
+            if self.type == 1:
+                Mineral.images[1] = load_image('21203.png')  # 80% (기본)
+            elif self.type == 2:
+                Mineral.images[2] = load_image('21204.png')  # 10%
+            elif self.type == 3:
+                Mineral.images[3] = load_image('21204.png')  # 5%
+            elif self.type == 4:
+                Mineral.images[4] = load_image('21204.png')  # 1% (전설)
+
+        # 결정된 이미지를 현재 객체의 이미지로 설정
+        self.image = Mineral.images[self.type]
+        self.scale = 2.0
     def draw(self, camera_y):
         draw_y = self.y - camera_y
-        self.image.draw(self.x, draw_y)
-        l, b, r, t = self.get_bb()
-        #draw_rectangle(l, b - camera_y, r, t - camera_y)
+        self.image.clip_draw(
+            0, 0, self.image.w, self.image.h,  # Source (원본에서 가져올 영역)
+            self.x, draw_y,  # Position (화면에 그릴 위치)
+            self.image.w * self.scale, self.image.h * self.scale  # Size (화면에 그려질 크기)
+        )
+        # l, b, r, t = self.get_bb()
+        # draw_rectangle(l, b - camera_y, r, t - camera_y)
 
     def update(self, character):
         time_based_offset = math.sin(get_time() * Mineral.MINERAL_SPEED + self.x)
         MINERAL_offset = time_based_offset * Mineral.MINERAL_RANGE
         self.y = self.original_y + MINERAL_offset
-
 
     def get_bb(self):
         return self.x - 15, self.y - 15, self.x + 15, self.y + 15
