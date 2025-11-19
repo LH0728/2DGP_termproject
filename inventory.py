@@ -40,7 +40,7 @@ class Inventory:
             return
 
         start_x = 400
-        y = 400
+        y = 600
 
 
         for i, (item_type, count) in enumerate(self.items.items()):

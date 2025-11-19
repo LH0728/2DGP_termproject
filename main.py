@@ -223,7 +223,7 @@ def check_collisions():
         for soil in soils_to_remove:
             if soil in mine_2.soils:
                 mine_2.soils.remove(soil)
-                if random.random() < 0.1:
+                if random.random() < 0.3:
                     mineral = Mineral(soil.x, soil.y + 20)
                     current_world.append(mineral)
         for thrown_axe in axes_to_remove:
@@ -231,8 +231,12 @@ def check_collisions():
                 main_character.thrown_axes.remove(thrown_axe)
 
         minerals_to_remove = []
+        now = get_time()
         for o in current_world:
             if isinstance(o, Mineral):
+                if now - o.spawn_time < 0.5:
+                    continue
+
                 if collide(main_character, o):
                     main_character.inventory.add(o.type)
                     minerals_to_remove.append(o)

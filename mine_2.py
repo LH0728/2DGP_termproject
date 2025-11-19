@@ -140,7 +140,7 @@ class Mineral:
         self.x = x
         self.original_y = y - 20
         self.y = y
-
+        self.spawn_time = get_time()
         # 1번(80), 2번(10), 3번(5), 4번(1)의 가중치를 설정합니다.
         # choices 함수는 weights 비율에 따라 알아서 확률을 계산해줍니다.
         mineral_types = [1, 2, 3, 4]
