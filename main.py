@@ -1,6 +1,6 @@
 from pico2d import *
 from character import Main_Character
-from village import Village
+from village import Village, Merchant
 from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
@@ -65,7 +65,8 @@ def setup_worlds():
 
     # 마을 월드 설정
     village = Village()
-    village_world = [village, main_character]
+    merchant = Merchant(800, 150)
+    village_world = [village, merchant, main_character]
 
     # 광산 월드 설정
     mine = Mine()

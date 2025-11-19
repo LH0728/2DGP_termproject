@@ -179,7 +179,7 @@ class Run:
 
     def do(self):
         # frame 증가는 Main_Character.update()에서 제어함
-        self.character.x += self.character.dir * 10
+        self.character.x += self.character.dir * 5
 
         if (self.character.y - 50) > self.character.ground_y + 5:
             self.character.state_machine.handle_state_event(('FALL', None))

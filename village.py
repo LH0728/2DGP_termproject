@@ -1,4 +1,5 @@
-from pico2d import load_image
+from pico2d import load_image, get_time
+
 
 class Village:
     def __init__(self):
@@ -25,3 +26,36 @@ class Village:
 
     def update(self):
         pass
+
+class Merchant:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.image = load_image('10201_T1.png')
+
+        self.frame = 0
+        self.timer = 0.0
+        self.frame_count = 4
+        self.anim_speed = 0.2
+        self.width = self.image.w // self.frame_count
+        self.height = self.image.h
+        self.last_time = get_time()
+
+
+    def update(self):
+
+        now = get_time()
+        dt = now - self.last_time
+        self.last_time = now
+
+
+        self.timer += dt
+        if self.timer >= self.anim_speed:
+            self.timer = 0
+            self.frame = (self.frame + 1) % self.frame_count
+
+    def draw(self, camera_y):
+        draw_y = self.y - camera_y
+        self.image.clip_draw(
+            self.frame * self.width, 0, self.width, self.height,
+            self.x, draw_y, 150, 150
+        )
