@@ -96,6 +96,24 @@ class Soil:
             Soil.image = load_image('TileCraftGroundSetVersion2.png')
         self.x, self.y = x, y
 
+        self.hp = 2
+        self.last_hit_time = 0
+
+    def hit(self):
+        now = get_time()
+
+        # [중요] 마지막으로 맞은지 0.5초가 안 지났으면 데미지 무시
+        # (한 번 휘두를 때 여러 번 맞는 것 방지)
+        if now - self.last_hit_time < 0.5:
+            return False
+
+        self.hp -= 1
+        self.last_hit_time = now
+
+        if self.hp <= 0:
+            return True
+
+        return False  # 아직 안 깨짐
     def draw(self, camera_y):
         draw_y = self.y - camera_y
         self.image.clip_draw(3, self.image.h - 45, 42, 42, self.x, draw_y, 60, 60)

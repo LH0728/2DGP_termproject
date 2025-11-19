@@ -195,17 +195,14 @@ def check_collisions():
         soils_to_remove = []
         axes_to_remove = []
 
-
-
-
-        # --- 곡괭이와 흙 블록 충돌 처리 ---
-        # 1. 휘두르는 도끼와 흙 블록 충돌
         for axe in main_character.axes:
             for soil in mine_2.soils:
+                if soil in soils_to_remove:
+                    continue
+
                 if collide(axe, soil):
-                    if soil not in soils_to_remove:
+                    if soil.hit():
                         soils_to_remove.append(soil)
-                    # 피격 이펙트 생성
                     hit_effects.append(HitEffect(soil.x, soil.y))
 
         # 2. 던지는 도끼와 흙 블록 충돌
