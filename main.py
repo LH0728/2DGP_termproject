@@ -48,6 +48,8 @@ def handle_events():
             if current_world == mine_2_world:
                 change_world(mine_world)
                 main_character.x, main_character.y = 600, 150 # mine 시작 위치
+        elif event.key == SDLK_e:
+            main_character.inventory.toggle()
         else:
             # 현재 월드의 캐릭터에게만 이벤트를 전달합니다.
             main_character.handle_event(event)
@@ -228,6 +230,16 @@ def check_collisions():
             if thrown_axe in main_character.thrown_axes:
                 main_character.thrown_axes.remove(thrown_axe)
 
+        minerals_to_remove = []
+        for o in current_world:
+            if isinstance(o, Mineral):
+                if collide(main_character, o):
+                    main_character.inventory.add(o.type)
+                    minerals_to_remove.append(o)
+
+        # 먹은 광물 월드에서 삭제
+        for m in minerals_to_remove:
+            current_world.remove(m)
 
 def render_world():
     global camera_y
@@ -237,6 +249,9 @@ def render_world():
 
     for effect in hit_effects:
         effect.draw(camera_y)
+
+    main_character.inventory.draw()
+
     update_canvas()
 
 open_canvas(1200, 800)

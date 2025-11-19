@@ -46,8 +46,9 @@ class Inventory:
         for i, (item_type, count) in enumerate(self.items.items()):
             # 아이콘 그리기 (x좌표를 150씩 띄워서 배치)
             icon_x = start_x + (i * 150)
+            self.bg_image.draw(icon_x, y, 100, 100)
             self.icons[item_type].draw(icon_x, y, 50, 50)
 
             # 수량 표시
-            if self.font:
-                self.font.draw(icon_x - 10, y - 40, f'x {count}', (255, 255, 0))
+            if self.font and count >= 0:
+                self.font.draw(icon_x + 10, y - 25, f'{count}', (255, 255, 0))

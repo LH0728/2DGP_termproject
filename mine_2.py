@@ -104,7 +104,7 @@ class Soil:
 
         # [중요] 마지막으로 맞은지 0.5초가 안 지났으면 데미지 무시
         # (한 번 휘두를 때 여러 번 맞는 것 방지)
-        if now - self.last_hit_time < 0.5:
+        if now - self.last_hit_time < 0.2:
             return False
 
         self.hp -= 1
