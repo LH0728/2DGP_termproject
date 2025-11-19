@@ -29,34 +29,58 @@ def collide(a, b):
     return True
 
 
-
 def handle_events():
     global running
+    global merchant
+
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
             running = False
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            running = False
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_UP:
-            # mine에서 mine_2로 이동
-            if current_world == mine_world and 500 < main_character.x < 700:
-                change_world(mine_2_world)
-                main_character.x, main_character.y = 600, 230 # mine_2 시작 위치
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_DOWN:
-            # mine_2에서 mine으로 이동
-            if current_world == mine_2_world:
-                change_world(mine_world)
-                main_character.x, main_character.y = 600, 150 # mine 시작 위치
-        elif event.key == SDLK_e:
-            main_character.inventory.toggle()
-        else:
-            # 현재 월드의 캐릭터에게만 이벤트를 전달합니다.
-            main_character.handle_event(event)
 
+
+        elif event.type == SDL_MOUSEBUTTONDOWN and event.button == SDL_BUTTON_LEFT:
+            click_x, click_y = event.x, 800 - 1 - event.y
+
+            if main_character.shop.visible:
+                main_character.shop.handle_event(event, main_character, merchant)
+
+            else:
+                if current_world == village_world and merchant:
+                    if merchant.x - 50 <= click_x <= merchant.x + 50 and merchant.y - 50 <= click_y <= merchant.y + 50:
+                        main_character.shop.toggle()
+
+        elif event.type == SDL_KEYDOWN:
+            if event.key == SDLK_ESCAPE:
+                if main_character.shop.visible:
+                    main_character.shop.visible = False
+                elif main_character.inventory.visible:
+                    main_character.inventory.visible = False
+                else:  # 게임 종료
+                    running = False
+
+            elif event.key == SDLK_e:
+                main_character.inventory.toggle()
+
+            elif event.key == SDLK_UP:
+                if current_world == mine_world and 500 < main_character.x < 700:
+                    change_world(mine_2_world)
+                    main_character.x, main_character.y = 600, 230
+
+            elif event.key == SDLK_DOWN:
+                if current_world == mine_2_world:
+                    change_world(mine_world)
+                    main_character.x, main_character.y = 600, 150
+
+            else:
+
+                main_character.handle_event(event)
+
+        elif event.type == SDL_KEYUP:
+            main_character.handle_event(event)
 def setup_worlds():
     global village_world, mine_world, mine_2_world, dungeon_world, current_world
-    global main_character, hit_effects
+    global main_character, hit_effects, merchant
 
     global camera_y
     camera_y = 0.0
@@ -277,6 +301,7 @@ def render_world():
         effect.draw(camera_y)
 
     main_character.inventory.draw()
+    main_character.shop.draw(main_character)
 
     update_canvas()
 

@@ -1,6 +1,7 @@
 from pico2d import *
 
 from inventory import Inventory
+from shop import Shop
 from state_machine import StateMachine
 from axe import *
 
@@ -254,6 +255,7 @@ class Main_Character:
         self.axes = []  # 도끼 리스트 추가
         self.thrown_axes = []  # 던지는 도끼 리스트
         self.inventory = Inventory()
+        self.shop = Shop()
 
         # --- [추가] 현재 밟고 있는 땅의 높이 ---
         self.ground_y = 150
