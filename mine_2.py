@@ -66,9 +66,6 @@ class Mine_2:
         character.ground_y = max_ground_y+50
 
     def procedural_update(self, camera_y):
-        screen_top_y = camera_y + 800
-        self.soils = [soil for soil in self.soils if soil.get_bb()[1] < screen_top_y]
-
         screen_bottom_y = camera_y
 
         while screen_bottom_y < self.lowest_generated_y:
@@ -76,7 +73,7 @@ class Mine_2:
             self.generate_new_row(new_row_y)
             self.lowest_generated_y -= self.soil_height
 
-
+        # 배경 스크롤 관련 보정 (이 부분도 유지)
         if (self.bg_y - 400) - camera_y > 800:
             self.bg_y -= 800
 
