@@ -197,6 +197,27 @@ def check_collisions():
         soils_to_remove = []
         axes_to_remove = []
 
+        for soil in mine_2.soils:
+            if collide(main_character, soil):
+                left_c, bottom_c, right_c, top_c = main_character.get_bb()
+                left_s, bottom_s, right_s, top_s = soil.get_bb()
+
+                overlap_x = min(right_c, right_s) - max(left_c, left_s)
+                overlap_y = min(top_c, top_s) - max(bottom_c, bottom_s)
+
+
+                if overlap_x < overlap_y:
+                    if main_character.x < soil.x:
+                        main_character.x -= overlap_x
+                    else:
+                        main_character.x += overlap_x
+
+                else:
+
+                    if main_character.y < soil.y and main_character.jump_velocity > 0:
+                        main_character.y -= overlap_y
+                        main_character.jump_velocity = 0
+
         for axe in main_character.axes:
             for soil in mine_2.soils:
                 if soil in soils_to_remove:
