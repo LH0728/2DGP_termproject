@@ -19,8 +19,7 @@ class Shop:
 
         self.items_3x3 = [None] * 9
 
-
-
+        self.coin_image = load_image('coin_1.png')
         self.icons = {
             1: load_image('21203.png'),
             2: load_image('21204.png'),
@@ -106,6 +105,16 @@ class Shop:
 
         grid_start_x = self.center_x - (slot_size * 1.5 + slot_margin * 1)
         grid_start_y = self.center_y + 150
+
+        coin_slot_x = grid_start_x - (slot_size + slot_margin) - 20
+        coin_slot_y = grid_start_y - (slot_size + slot_margin)
+
+        self.slot_image.draw(coin_slot_x, coin_slot_y, slot_size, slot_size)
+
+        self.coin_image.draw(coin_slot_x, coin_slot_y, item_icon_size, item_icon_size)
+
+        if self.font:
+            self.font.draw(coin_slot_x + 10, coin_slot_y - 25, f"{character.inventory.coin}", (255, 255, 0))
 
         for i in range(3):
             for j in range(3):
