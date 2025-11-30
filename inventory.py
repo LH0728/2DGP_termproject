@@ -9,6 +9,9 @@ class Inventory:
             3: 0,  # Rare
             4: 0  # Legend
         }
+        self.coin = 0
+        self.coin_image = load_image('coin_1.png')
+
         self.visible = False
 
         self.bg_image = load_image('UI_BTN_Tier_1.png')
@@ -39,8 +42,14 @@ class Inventory:
         if not self.visible:
             return
 
-        start_x = 400
+        start_x = 470
         y = 600
+        coin_x = 320  # 광물 시작점(400)보다 왼쪽
+        self.bg_image.draw(coin_x, y, 100, 100)  # 배경
+        self.coin_image.draw(coin_x, y, 50, 50)  # 코인 아이콘
+
+        if self.font:
+            self.font.draw(coin_x + 10, y - 25, f'{self.coin}', (255, 255, 0))
 
 
         for i, (item_type, count) in enumerate(self.items.items()):
@@ -52,3 +61,7 @@ class Inventory:
             # 수량 표시
             if self.font and count >= 0:
                 self.font.draw(icon_x + 10, y - 25, f'{count}', (255, 255, 0))
+
+    def add_coin(self, amount):
+        self.coin += amount
+        print(f"코인 변경: {amount} (현재 {self.coin})")
