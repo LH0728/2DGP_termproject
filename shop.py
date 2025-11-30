@@ -9,23 +9,39 @@ class Shop:
         try:
             self.font = load_font('ENCR10B.TTF', 20)
             self.title_font = load_font('ENCR10B.TTF', 30)
+            self.price_font = load_font('ENCR10B.TTF', 14)
         except:
             self.font = None
             self.title_font = None
+            self.price_font = None
 
         self.center_x = 650
         self.center_y = 400
 
+        # [수정] 리스트를 만들 때 곡괭이 정보를 바로 넣습니다. (총 9개 요소를 맞춰줍니다)
+        self.items_3x3 = [
+            # 0번: Azure Pickaxe (2번 이미지)
+            {'name': 'Azure Pickaxe', 'price': 5000, 'img': load_image('PINT5_01.png')},
 
-        self.items_3x3 = [None] * 9
+            # 1번: Emerald Pickaxe (3번 이미지)
+            {'name': 'Emerald Pickaxe', 'price': 10000, 'img': load_image('PINT6_01.png')},
 
-        self.coin_image = load_image('coin_1.png')
+            # 2번: Gold Pickaxe (1번 이미지)
+            {'name': 'Gold Pickaxe', 'price': 1000, 'img': load_image('PINT4_01.png')},
+
+            # 나머지 6칸은 비어있음 (None)
+            None, None, None,
+            None, None, None
+        ]
+
         self.icons = {
             1: load_image('21203.png'),
             2: load_image('21204.png'),
             3: load_image('21205.png'),
             4: load_image('21206.png')
         }
+
+        self.coin_image = load_image('coin_1.png')
 
         self.prices = {
             1: 10,  # Common
@@ -53,7 +69,37 @@ class Shop:
             slot_size = 80
             slot_margin = 10
 
+            grid_start_x = self.center_x - (slot_size * 1.5 + slot_margin * 1)
             grid_start_y = self.center_y + 150
+
+            for i in range(3):
+                for j in range(3):
+                    idx = i * 3 + j
+                    slot_x = grid_start_x + j * (slot_size + slot_margin)
+                    slot_y = grid_start_y - i * (slot_size + slot_margin)
+
+                    l = slot_x - slot_size / 2
+                    r = slot_x + slot_size / 2
+                    b = slot_y - slot_size / 2
+                    t = slot_y + slot_size / 2
+
+                    if l <= click_x <= r and b <= click_y <= t:
+                        item = self.items_3x3[idx]
+                        if item:
+                            item_tier = idx + 1
+
+                            if character.inventory.coin >= item['price']:
+                                character.inventory.coin -= item['price']
+
+                                if character.inventory.pickaxe_tier < item_tier:
+                                    character.inventory.pickaxe_tier = item_tier
+                                    print(f"[구매 성공] {item['name']} 장착 완료! (Tier {item_tier})")
+                                else:
+                                    print(f"[구매 성공] {item['name']} 구매 (이미 더 좋은 장비 보유 중)")
+
+                            else:
+                                print(f"[구매 실패] 코인이 부족합니다.")
+                        return True
 
             # 플레이어 인벤토리 시작 위치 (하단 한 줄)
             row_start_x = self.center_x - (slot_size * 2 + slot_margin * 1.5)
@@ -126,10 +172,14 @@ class Shop:
 
 
                 item = self.items_3x3[idx]
-                if item and item['type'] in self.icons:
-                    self.icons[item['type']].draw(slot_x, slot_y, item_icon_size, item_icon_size)
-                    if self.font and item['count'] is not None:
-                        self.font.draw(slot_x + 15, slot_y - 25, f"{item['count']}", (255, 255, 0))
+                if item:
+                    # 이미지
+                    if 'img' in item:
+                        item['img'].draw(slot_x, slot_y, item_icon_size, item_icon_size)
+
+                    # 가격 표시
+                    if self.price_font:
+                        self.price_font.draw(slot_x - 20, slot_y - 30, f"{item['price']}G", (255, 215, 0))
 
         row_start_x = self.center_x - (slot_size * 2 + slot_margin * 1.5)
         row_start_y = grid_start_y - (slot_size + slot_margin) * 3 - 40

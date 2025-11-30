@@ -10,6 +10,7 @@ class Inventory:
             4: 0  # Legend
         }
         self.coin = 0
+        self.pickaxe_tier = 0
         self.coin_image = load_image('coin_1.png')
 
         self.visible = False
