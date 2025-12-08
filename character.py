@@ -6,6 +6,55 @@ from state_machine import StateMachine
 from axe import *
 
 
+class HPBar:
+    def __init__(self, character):
+        self.character = character
+
+        # 1. 이미지 로드 (파일명 변경)
+        self.bg_image = load_image('hp_bar.png')  # 빈 UI 프레임
+        self.fill_image = load_image('hp_block.png')  # 빨간색 블록 하나
+
+        # 2. UI 위치 및 크기 설정 (화면 좌측 하단 기준)
+        self.x = 130  # UI 프레임의 중심 X 좌표
+        self.y = 50  # UI 프레임의 중심 Y 좌표
+
+        # 3. 블록 배치 관련 상수 설정 (이미지 픽셀 기준 측정값)
+        # bg_image 중심으로부터 첫 번째 블록 중심까지의 거리
+        self.bar_start_offset_x = -58
+        self.bar_start_offset_y = 1
+        # 블록 중심 간의 거리
+        self.block_spacing = 14
+        # 최대 블록 개수
+        self.max_blocks = 10
+
+        # 텍스트 표시용 폰트
+        try:
+            self.font = load_font('ENCR10B.TTF', 16)
+        except:
+            self.font = None
+
+    def draw(self):
+        # 1. UI 배경 프레임 그리기
+        self.bg_image.draw(self.x, self.y)
+
+        # 2. 현재 HP에 비례하여 그릴 블록 개수 계산
+        hp_ratio = max(0.0, min(self.character.hp / self.character.max_hp, 1.0))
+        num_blocks_to_draw = int(hp_ratio * self.max_blocks)
+
+        # 3. 블록 하나씩 그리기
+        start_x = self.x + self.bar_start_offset_x
+        block_y = self.y + self.bar_start_offset_y
+
+        for i in range(num_blocks_to_draw):
+            block_x = start_x + (i * self.block_spacing)
+            self.fill_image.draw(block_x, block_y)
+
+        # 4. 텍스트 표시 (선택 사항)
+        if self.font:
+            hp_text = f"{int(self.character.hp)}/{self.character.max_hp}"
+            # 텍스트 위치도 하단으로 조정
+            self.font.draw(self.x - 10, self.y - 25, hp_text, (255, 255, 255))
+
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
 
