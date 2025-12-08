@@ -109,7 +109,7 @@ class Goblin:
 
     def __init__(self, x, y):
         self.x, self.y = x, y
-        self.hp = 3
+        self.hp = 20
         self.face_dir = -1
 
         self.last_time = get_time()

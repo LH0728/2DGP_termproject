@@ -224,6 +224,16 @@ class Main_Character:
         self.shop = Shop()
         self.ground_y = 150
 
+        self.damage = 1  # 현재 공격력 (기본 1)
+
+        # 티어별 데미지 설정 (0:기본, 1:Azure, 2:Emerald, 3:Gold)
+        self.tier_damages = {
+            0: 1,
+            3: 2,
+            1: 6,
+            2: 10
+        }
+
         # --- HP 관련 속성 ---
         self.max_hp = 100
         self.hp = 100
@@ -347,6 +357,13 @@ class Main_Character:
 
     def equip_pickaxe(self, tier):
         self.inventory.pickaxe_tier = tier
+
+        # 이미지 변경
         Axe.set_tier(tier)
         ThrownAxe.set_tier(tier)
-        print(f"[Character] 곡괭이 교체 완료: Tier {tier}")
+
+        # 데미지 변경
+        # tier가 딕셔너리에 없으면 기본값 1 적용
+        self.damage = self.tier_damages.get(tier, 1)
+
+        print(f"[Character] 곡괭이 교체: Tier {tier}, 공격력: {self.damage}")

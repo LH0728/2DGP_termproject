@@ -160,13 +160,13 @@ def change_world(new_world):
         main_character.is_jumping = False
         main_character.jump_velocity = 0
 
-# [main.py] 의 check_collisions 함수 수정
 
 def check_collisions():
     global current_world, main_character
 
-    # --- 광산 1 충돌 처리 ---
+    # --- 광산 1 충돌 처리 (두더지는 체력이 1이라 데미지 상관없음) ---
     if current_world == mine_world:
+        # (기존 코드와 동일)
         mine = mine_world[0]
         moles_to_remove = []
         axes_to_remove = []
@@ -175,7 +175,6 @@ def check_collisions():
             for mole in mine.moles:
                 if mole.hp <= 0: continue
                 if collide(axe, mole):
-                    # 두더지는 hit함수가 (dir) 하나만 받으므로 그대로 둠
                     if mole.hit(main_character.face_dir):
                         if mole not in moles_to_remove: moles_to_remove.append(mole)
                     hit_effects.append(HitEffect(mole.x, mole.y))
@@ -196,7 +195,7 @@ def check_collisions():
         for thrown_axe in axes_to_remove:
             if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
 
-    # --- 광산 2 충돌 처리 ---
+    # --- 광산 2 충돌 처리 (기존 코드와 동일) ---
     elif current_world == mine_2_world:
         mine_2 = mine_2_world[0]
         soils_to_remove = []
@@ -271,8 +270,8 @@ def check_collisions():
             for goblin in dungeon.goblins:
                 if goblin.hp <= 0: continue
                 if collide(axe, goblin):
-                    # [수정 포인트] 뒤에 main_character.face_dir 인자를 꼭 추가해야 합니다!
-                    if goblin.hit(1, main_character.face_dir):
+                    # [수정] main_character.damage 를 사용하여 데미지 적용
+                    if goblin.hit(main_character.damage, main_character.face_dir):
                         if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
                     hit_effects.append(HitEffect(goblin.x, goblin.y))
 
@@ -282,8 +281,8 @@ def check_collisions():
             for goblin in dungeon.goblins:
                 if goblin.hp <= 0: continue
                 if collide(thrown_axe, goblin):
-                    # [수정 포인트] 여기도 뒤에 thrown_axe.direction 인자를 추가해야 합니다!
-                    if goblin.hit(1, thrown_axe.direction):
+                    # [수정] main_character.damage 를 사용하여 데미지 적용
+                    if goblin.hit(main_character.damage, thrown_axe.direction):
                         if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
                     axes_to_remove.append(thrown_axe)
                     hit_effects.append(HitEffect(goblin.x, goblin.y))
