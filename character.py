@@ -399,3 +399,10 @@ class Main_Character:
     def clear_projectiles(self):
         self.thrown_axes.clear()
         self.axes.clear()
+
+    def equip_pickaxe(self, tier):
+        self.inventory.pickaxe_tier = tier
+        # Axe와 ThrownAxe 클래스의 정적 이미지를 교체
+        Axe.set_tier(tier)
+        ThrownAxe.set_tier(tier)
+        print(f"[Character] 곡괭이 교체 완료: Tier {tier}")

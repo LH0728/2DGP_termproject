@@ -92,7 +92,7 @@ class Shop:
                                 character.inventory.coin -= item['price']
 
                                 if character.inventory.pickaxe_tier < item_tier:
-                                    character.inventory.pickaxe_tier = item_tier
+                                    character.equip_pickaxe(item_tier)
                                     print(f"[구매 성공] {item['name']} 장착 완료! (Tier {item_tier})")
                                 else:
                                     print(f"[구매 성공] {item['name']} 구매 (이미 더 좋은 장비 보유 중)")

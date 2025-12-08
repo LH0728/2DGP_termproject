@@ -2,7 +2,12 @@ import math
 
 from pico2d import *
 
-
+PICKAXE_IMAGES = {
+    0: '10001_T1_Pickax.png',
+    1: 'PINT5_01.png',
+    2: 'PINT6_01.png',
+    3: 'PINT4_01.png'
+}
 class Axe:
     image = None
 
@@ -21,9 +26,15 @@ class Axe:
     PIVOT_OFFSET_X = 10  # 앞쪽으로
     PIVOT_OFFSET_Y = -20 # 아래쪽으로
 
+    @classmethod
+    def set_tier(cls, tier):
+        filename = PICKAXE_IMAGES.get(tier, PICKAXE_IMAGES[0])
+        cls.image = load_image(filename)
+        print(f"[Axe] 이미지 변경됨: Tier {tier} -> {filename}")
+
     def __init__(self, parent):
         if not Axe.image:
-            Axe.image = load_image('10001_T1_Pickax.png')
+            Axe.set_tier(0)
 
         self.parent = parent
         self.start_time = get_time()
@@ -94,9 +105,14 @@ class ThrownAxe:
     ROTATION_SPEED_RPS = 2  # 초당 2바퀴 회전
     LIFETIME_S = 1.5  # 1.5초 후 소멸
 
+    @classmethod
+    def set_tier(cls, tier):
+        filename = PICKAXE_IMAGES.get(tier, PICKAXE_IMAGES[0])
+        cls.image = load_image(filename)
+
     def __init__(self, x, y, direction):
         if ThrownAxe.image is None:
-            ThrownAxe.image = load_image('10001_T1_Pickax.png')
+            ThrownAxe.set_tier(0)
 
         self.x, self.y = x, y
         self.direction = direction
