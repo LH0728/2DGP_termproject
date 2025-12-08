@@ -23,7 +23,7 @@ class HPBar:
 
         # 3. 블록 간격 및 최대 개수 설정
         # 블록 이미지 크기에 맞춰 간격을 조절해주세요 (예: 15~20).
-        self.block_spacing = 18
+        self.block_spacing = 15
         self.max_blocks = 10
 
         # 텍스트 표시용 폰트 (선택 사항)

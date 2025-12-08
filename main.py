@@ -111,8 +111,9 @@ def setup_worlds():
 def update_world():
     global current_world, hit_effects
     global camera_y
+
     for o in current_world:
-        if isinstance(o, (Mine, Mine_2, Mineral)):
+        if isinstance(o, (Mine, Mine_2, Mineral,Dungeon)):
             o.update(main_character)
         else:
             o.update()
