@@ -7,52 +7,40 @@ from state_machine import StateMachine
 from axe import *
 
 
-# --- [수정] HP Bar UI 클래스 (블록만 사용) ---
+# --- HP Bar UI 클래스 ---
 class HPBar:
     def __init__(self, character):
         self.character = character
-
-        # 1. 이미지 로드 (블록 이미지만 사용합니다)
         # 프로젝트 폴더에 'hp_block.png' 파일이 있어야 합니다.
         self.fill_image = load_image('hp.png')
 
-        # 2. UI 시작 위치 설정 (화면 좌측 하단)
-        # 첫 번째 블록이 그려질 중심 좌표입니다.
+        # UI 위치 및 크기
         self.x = 50
         self.y = 50
-
-        # 3. 블록 간격 및 최대 개수 설정
-        # 블록 이미지 크기에 맞춰 간격을 조절해주세요 (예: 15~20).
-        self.block_spacing = 15
+        self.block_spacing = 18
         self.max_blocks = 10
 
-        # 텍스트 표시용 폰트 (선택 사항)
         try:
             self.font = load_font('ENCR10B.TTF', 16)
         except:
             self.font = None
 
     def draw(self):
-        # 1. 현재 HP에 비례하여 그릴 블록 개수 계산 (0 ~ 10개)
+        # HP 비율 계산 및 블록 그리기
         hp_ratio = max(0.0, min(self.character.hp / self.character.max_hp, 1.0))
         num_blocks_to_draw = int(hp_ratio * self.max_blocks)
 
-        # 2. 블록 하나씩 반복해서 그리기
         for i in range(num_blocks_to_draw):
-            # 각 블록의 x 좌표 계산 (시작점 + 간격 * 순서)
             block_x = self.x + (i * self.block_spacing)
-            # y 좌표는 모두 동일하게 유지
             block_y = self.y
             self.fill_image.draw(block_x, block_y)
 
-        # 3. 텍스트 표시 (블록들 위쪽에 표시)
         if self.font:
             hp_text = f"{int(self.character.hp)}/{self.character.max_hp}"
-            # 첫 번째 블록 x좌표, 블록 y좌표보다 20픽셀 위
             self.font.draw(self.x, self.y + 25, hp_text, (255, 255, 255))
 
 
-# --- 기존 함수들 (그대로 유지) ---
+# --- 키 입력 이벤트 함수들 ---
 def right_up(e): return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
 
 
@@ -89,7 +77,7 @@ def s_down(e): return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key 
 def fall(e): return e[0] == 'FALL'
 
 
-# --- 기존 상태 클래스들 (그대로 유지) ---
+# --- 상태 클래스들 ---
 class Picking:
     def __init__(self, character):
         self.character = character
@@ -216,7 +204,7 @@ class Idle:
                                                      draw_y, 150, 150)
 
 
-# --- Main_Character 클래스 (그대로 유지) ---
+# --- Main_Character 클래스 ---
 class Main_Character:
     def __init__(self):
         self.x, self.y = 600, 150
@@ -240,6 +228,10 @@ class Main_Character:
         self.max_hp = 100
         self.hp = 100
         self.hp_bar = HPBar(self)
+
+        # [중요: 이 부분이 없어서 오류가 났던 것입니다]
+        self.last_hit_time = 0.0  # 마지막으로 맞은 시간 초기화
+        self.invincible_duration = 1.0  # 무적 시간 (1초)
         # -------------------
 
         self.IDLE = Idle(self)
@@ -294,6 +286,16 @@ class Main_Character:
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
 
+    # [피격 처리 메서드]
+    def hit(self, damage):
+        # last_hit_time 변수가 __init__에 있어야 여기서 에러가 안 납니다.
+        if get_time() - self.last_hit_time > self.invincible_duration:
+            self.hp = max(0, self.hp - damage)
+            self.last_hit_time = get_time()  # 맞은 시간 갱신
+            print(f"[Player Hit] HP: {self.hp}")
+            return True
+        return False
+
     def handle_event(self, event):
         if event.type == SDL_KEYDOWN:
             if event.key == SDLK_RIGHT:
@@ -305,11 +307,6 @@ class Main_Character:
                 if self.state_machine.cur_state in [self.IDLE, self.RUN]: self.prev_state = self.state_machine.cur_state
             elif event.key == SDLK_s:
                 if self.state_machine.cur_state in [self.IDLE, self.RUN]: self.throw_axe()
-
-            # --- [테스트용] Z키 입력 시 HP 감소 ---
-            elif event.key == SDLK_z:
-                self.hp = max(0, self.hp - 10)
-                print(f"HP Changed: {self.hp}/{self.max_hp}")
 
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:

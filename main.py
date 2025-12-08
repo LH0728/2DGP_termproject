@@ -1,3 +1,4 @@
+# [main.py] - check_collisions 함수 수정 및 전체 코드
 from pico2d import *
 from character import Main_Character
 from village import Village, Merchant
@@ -73,11 +74,11 @@ def handle_events():
                     main_character.x, main_character.y = 600, 150
 
             else:
-
                 main_character.handle_event(event)
 
         elif event.type == SDL_KEYUP:
             main_character.handle_event(event)
+
 def setup_worlds():
     global village_world, mine_world, mine_2_world, dungeon_world, current_world
     global main_character, hit_effects, merchant
@@ -111,9 +112,8 @@ def setup_worlds():
 def update_world():
     global current_world, hit_effects
     global camera_y
-
     for o in current_world:
-        if isinstance(o, (Mine, Mine_2, Mineral,Dungeon)):
+        if isinstance(o, (Mine, Mine_2, Mineral, Dungeon)):
             o.update(main_character)
         else:
             o.update()
@@ -124,33 +124,28 @@ def update_world():
     # 월드 전환 로직 (좌우)
     if current_world == village_world and main_character.x > 1200:
         change_world(mine_world)
-        main_character.x = 10  # 화면 왼쪽에서 나타남
-        # [수정] y좌표 리셋
+        main_character.x = 10
         main_character.y = 150
     elif current_world == mine_world and main_character.x < 0:
         change_world(village_world)
-        main_character.x = 1190  # 화면 오른쪽에서 나타남
-        # [수정] y좌표 리셋
+        main_character.x = 1190
         main_character.y = 150
     elif current_world == village_world and main_character.x < 0:
         change_world(dungeon_world)
-        main_character.x = 1190  # 화면 오른쪽에서 나타남
-        # [수정] y좌표 리셋
+        main_character.x = 1190
         main_character.y = 150
     elif current_world == dungeon_world and main_character.x > 1200:
         change_world(village_world)
-        main_character.x = 10  # 화면 오른쪽에서 나타남
-        # [수정] y좌표 리셋
+        main_character.x = 10
         main_character.y = 150
 
     if current_world == mine_2_world:
         target_camera_y = main_character.y - 300.0
         camera_y = min(0.0, target_camera_y)
-        mine_2_map = mine_2_world[0]  # mine_2 객체
+        mine_2_map = mine_2_world[0]
         mine_2_map.procedural_update(camera_y)
 
 def change_world(new_world):
-    """월드를 전환하는 함수"""
     global current_world
     global camera_y
     camera_y = 0.0
@@ -158,66 +153,47 @@ def change_world(new_world):
     main_character.clear_projectiles()
     hit_effects.clear()
 
-    current_world = new_world
-    main_character.clear_projectiles()
-    hit_effects.clear()
-
     if new_world != mine_2_world:
         main_character.ground_y = 150
-
-        # mine_2가 아닌 곳(마을, 광산1, 던전)에서는 y=150을 보장
     if new_world == village_world or new_world == mine_world or new_world == dungeon_world:
-        # 캐릭터가 점프/낙하 중(is_jumping) 상태로 맵을 이동할 수 있으므로
-        # y좌표를 강제로 150으로 맞추고 점프 상태를 해제합니다.
         main_character.y = 150
         main_character.is_jumping = False
         main_character.jump_velocity = 0
 
-
-
-
 def check_collisions():
     global current_world, main_character
 
-    # 광산 1 충돌 처리
+    # --- 광산 1 충돌 처리 ---
     if current_world == mine_world:
         mine = mine_world[0]
         moles_to_remove = []
         axes_to_remove = []
 
-        # 1. 휘두르는 도끼와 두더지 충돌
         for axe in main_character.axes:
             for mole in mine.moles:
                 if mole.hp <= 0: continue
                 if collide(axe, mole):
                     if mole.hit(main_character.face_dir):
-                        if mole not in moles_to_remove:
-                            moles_to_remove.append(mole)
+                        if mole not in moles_to_remove: moles_to_remove.append(mole)
                     hit_effects.append(HitEffect(mole.x, mole.y))
 
-        # 2. 던지는 도끼와 두더지 충돌
         for thrown_axe in main_character.thrown_axes:
-            if thrown_axe in axes_to_remove:
-                continue
+            if thrown_axe in axes_to_remove: continue
             for mole in mine.moles:
                 if mole.hp <= 0: continue
                 if collide(thrown_axe, mole):
                     if mole.hit(thrown_axe.direction):
-                        if mole not in moles_to_remove:
-                            moles_to_remove.append(mole)
+                        if mole not in moles_to_remove: moles_to_remove.append(mole)
                     axes_to_remove.append(thrown_axe)
                     hit_effects.append(HitEffect(mole.x, mole.y))
                     break
 
-        # 충돌된 객체들 제거
         for mole in moles_to_remove:
-            if mole in mine.moles:
-                mine.moles.remove(mole)
+            if mole in mine.moles: mine.moles.remove(mole)
         for thrown_axe in axes_to_remove:
-            if thrown_axe in main_character.thrown_axes:
-                main_character.thrown_axes.remove(thrown_axe)
+            if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
 
-    # 광산 2 충돌 처리
+    # --- 광산 2 충돌 처리 ---
     elif current_world == mine_2_world:
         mine_2 = mine_2_world[0]
         soils_to_remove = []
@@ -227,46 +203,33 @@ def check_collisions():
             if collide(main_character, soil):
                 left_c, bottom_c, right_c, top_c = main_character.get_bb()
                 left_s, bottom_s, right_s, top_s = soil.get_bb()
-
                 overlap_x = min(right_c, right_s) - max(left_c, left_s)
                 overlap_y = min(top_c, top_s) - max(bottom_c, bottom_s)
 
-
                 if overlap_x < overlap_y:
-                    if main_character.x < soil.x:
-                        main_character.x -= overlap_x
-                    else:
-                        main_character.x += overlap_x
-
+                    if main_character.x < soil.x: main_character.x -= overlap_x
+                    else: main_character.x += overlap_x
                 else:
-
                     if main_character.y < soil.y and main_character.jump_velocity > 0:
                         main_character.y -= overlap_y
                         main_character.jump_velocity = 0
 
         for axe in main_character.axes:
             for soil in mine_2.soils:
-                if soil in soils_to_remove:
-                    continue
-
+                if soil in soils_to_remove: continue
                 if collide(axe, soil):
-                    if soil.hit():
-                        soils_to_remove.append(soil)
+                    if soil.hit(): soils_to_remove.append(soil)
                     hit_effects.append(HitEffect(soil.x, soil.y))
 
-        # 2. 던지는 도끼와 흙 블록 충돌
         for thrown_axe in main_character.thrown_axes:
-            if thrown_axe in axes_to_remove:
-                continue
+            if thrown_axe in axes_to_remove: continue
             for soil in mine_2.soils:
                 if collide(thrown_axe, soil):
-                    if soil not in soils_to_remove:
-                        soils_to_remove.append(soil)
+                    if soil not in soils_to_remove: soils_to_remove.append(soil)
                     axes_to_remove.append(thrown_axe)
                     hit_effects.append(HitEffect(soil.x, soil.y))
-                    break # 도끼 하나당 블록 하나만 파괴
+                    break
 
-        # 충돌된 객체들 제거
         for soil in soils_to_remove:
             if soil in mine_2.soils:
                 mine_2.soils.remove(soil)
@@ -274,23 +237,61 @@ def check_collisions():
                     mineral = Mineral(soil.x, soil.y + 20)
                     current_world.append(mineral)
         for thrown_axe in axes_to_remove:
-            if thrown_axe in main_character.thrown_axes:
-                main_character.thrown_axes.remove(thrown_axe)
+            if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
 
         minerals_to_remove = []
         now = get_time()
         for o in current_world:
             if isinstance(o, Mineral):
-                if now - o.spawn_time < 0.5:
-                    continue
-
+                if now - o.spawn_time < 0.5: continue
                 if collide(main_character, o):
                     main_character.inventory.add(o.type)
                     minerals_to_remove.append(o)
-
-        # 먹은 광물 월드에서 삭제
         for m in minerals_to_remove:
             current_world.remove(m)
+
+    # --- [추가] 던전 충돌 처리 ---
+    elif current_world == dungeon_world:
+        dungeon = dungeon_world[0]
+        goblins_to_remove = []
+        axes_to_remove = []
+
+        # 1. 고블린 -> 캐릭터 공격 (충돌 시 캐릭터 HP 감소)
+        for goblin in dungeon.goblins:
+            if goblin.hp <= 0: continue
+            if collide(main_character, goblin):
+                # 캐릭터 hit 메서드 호출 (무적 시간 체크 포함됨)
+                if main_character.hit(10):
+                    # 피격 이펙트 (캐릭터 위치)
+                    hit_effects.append(HitEffect(main_character.x, main_character.y))
+
+        # 2. 캐릭터 -> 고블린 공격 (근접 도끼)
+        for axe in main_character.axes:
+            for goblin in dungeon.goblins:
+                if goblin.hp <= 0: continue
+                if collide(axe, goblin):
+                    if goblin.hit(1): # 데미지 1
+                        if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
+                    hit_effects.append(HitEffect(goblin.x, goblin.y))
+
+        # 3. 캐릭터 -> 고블린 공격 (던지는 도끼)
+        for thrown_axe in main_character.thrown_axes:
+            if thrown_axe in axes_to_remove: continue
+            for goblin in dungeon.goblins:
+                if goblin.hp <= 0: continue
+                if collide(thrown_axe, goblin):
+                    if goblin.hit(1):
+                        if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
+                    axes_to_remove.append(thrown_axe)
+                    hit_effects.append(HitEffect(goblin.x, goblin.y))
+                    break
+
+        # 사망한 고블린 및 사용된 도끼 제거
+        for goblin in goblins_to_remove:
+            if goblin in dungeon.goblins: dungeon.goblins.remove(goblin)
+        for thrown_axe in axes_to_remove:
+            if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
+
 
 def render_world():
     global camera_y
@@ -309,13 +310,12 @@ def render_world():
 open_canvas(1200, 800)
 running = True
 
-# reset_world() 대신 setup_worlds() 호출
 setup_worlds()
 
 while running:
     handle_events()
     update_world()
-    check_collisions() # 충돌 검사 함수 호출
+    check_collisions()
     render_world()
     delay(0.01)
 
