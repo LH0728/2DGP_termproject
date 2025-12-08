@@ -20,9 +20,7 @@ class GoblinRun:
         self.goblin = goblin
         self.frame = 0
         self.action_time = 0.0
-        # 60021_1.png는 124x35를 4개로 나눔
         self.frame_count = 4
-        # 이동 속도 (초당 픽셀)
         self.speed = 120
 
     def enter(self, e):
@@ -30,23 +28,16 @@ class GoblinRun:
         self.action_time = 0.0
 
     def do(self, player):
-        # 플레이어 방향 계산
         dx = player.x - self.goblin.x
-
-        # 플레이어와 너무 가까우면 떨림 방지를 위해 이동 멈춤
         if abs(dx) > 10:
-            # 진행 방향 설정 (1: 오른쪽, -1: 왼쪽)
             self.goblin.face_dir = 1 if dx > 0 else -1
             self.goblin.x += self.goblin.face_dir * self.speed * self.goblin.dt
 
-        # 애니메이션 프레임 업데이트 (약 10 FPS)
         self.action_time += self.goblin.dt
         self.frame = int(self.action_time * 10) % self.frame_count
 
-        # 플레이어와의 거리 계산 및 공격 상태 전환 체크
         distance = math.sqrt((player.x - self.goblin.x) ** 2 + (player.y - self.goblin.y) ** 2)
         if distance < self.goblin.ATTACK_RANGE:
-            # ATTACK_RANGE 안으로 들어오면 'NEAR_PLAYER' 이벤트 발생
             self.goblin.state_machine.handle_state_event(('NEAR_PLAYER', None))
 
     def exit(self, e):
@@ -59,11 +50,10 @@ class GoblinRun:
         draw_w = frame_width * self.goblin.SCALE
         draw_h = frame_height * self.goblin.SCALE
 
-        # [수정] 원본 이미지가 왼쪽을 보고 있으므로 로직 반전
-        if self.goblin.face_dir == -1:  # 왼쪽 이동 (원본 방향)
+        if self.goblin.face_dir == -1:
             self.goblin.image_run.clip_draw(self.frame * frame_width, 0, frame_width, frame_height, self.goblin.x,
                                             draw_y, draw_w, draw_h)
-        else:  # 오른쪽 이동 (좌우 반전 필요)
+        else:
             self.goblin.image_run.clip_composite_draw(self.frame * frame_width, 0, frame_width, frame_height, 0, 'h',
                                                       self.goblin.x, draw_y, draw_w, draw_h)
 
@@ -74,7 +64,6 @@ class GoblinAttack:
         self.goblin = goblin
         self.frame = 0
         self.action_time = 0.0
-        # 60021_1_Attack.png는 204x39를 6개로 나눔
         self.frame_count = 6
 
     def enter(self, e):
@@ -82,11 +71,9 @@ class GoblinAttack:
         self.action_time = 0.0
 
     def do(self, player):
-        # 공격 애니메이션 재생
         self.action_time += self.goblin.dt
-        self.frame = int(self.action_time * 10)  # 약 10 FPS
+        self.frame = int(self.action_time * 10)
 
-        # 애니메이션이 끝나면 'ANIMATION_END' 이벤트 발생 -> 다시 Run 상태로
         if self.frame >= self.frame_count:
             self.goblin.state_machine.handle_state_event(('ANIMATION_END', None))
 
@@ -100,11 +87,10 @@ class GoblinAttack:
         draw_w = frame_width * self.goblin.SCALE
         draw_h = frame_height * self.goblin.SCALE
 
-        # [수정] 원본 이미지가 왼쪽을 보고 있으므로 로직 반전
-        if self.goblin.face_dir == -1:  # 왼쪽 공격 (원본 방향)
+        if self.goblin.face_dir == -1:
             self.goblin.image_attack.clip_draw(self.frame * frame_width, 0, frame_width, frame_height, self.goblin.x,
                                                draw_y, draw_w, draw_h)
-        else:  # 오른쪽 공격 (좌우 반전 필요)
+        else:
             self.goblin.image_attack.clip_composite_draw(self.frame * frame_width, 0, frame_width, frame_height, 0, 'h',
                                                          self.goblin.x, draw_y, draw_w, draw_h)
 
@@ -118,19 +104,21 @@ class Goblin:
     attack_img_w = 0
     attack_img_h = 0
 
-    ATTACK_RANGE = 80  # 공격 범위 (픽셀 단위)
-    SCALE = 3.0  # 이미지 확대 비율
+    ATTACK_RANGE = 80
+    SCALE = 3.0
 
     def __init__(self, x, y):
         self.x, self.y = x, y
-        self.hp = 3  # 고블린 체력
-        self.face_dir = -1  # [수정] 초기 방향 왼쪽으로 설정 (이미지에 맞춤)
+        self.hp = 3
+        self.face_dir = -1
 
-        # 프레임 간 시간 계산을 위한 변수
         self.last_time = get_time()
         self.dt = 0.0
 
-        # 이미지 로드 및 크기 정보 저장
+        # [추가] 넉백 관련 변수
+        self.knockback_timer = 0.0
+        self.hit_face_dir = 0  # 맞았을 때 날아갈 방향
+
         if Goblin.image_run is None:
             Goblin.image_run = load_image('60021_1.png')
             Goblin.run_img_w = Goblin.image_run.w
@@ -141,11 +129,9 @@ class Goblin:
             Goblin.attack_img_w = Goblin.image_attack.w
             Goblin.attack_img_h = Goblin.image_attack.h
 
-        # 상태 객체 생성
         self.run_state = GoblinRun(self)
         self.attack_state = GoblinAttack(self)
 
-        # 상태 머신 설정
         self.state_machine = StateMachine(self.run_state, {
             self.run_state: {near_player: self.attack_state},
             self.attack_state: {animation_end: self.run_state}
@@ -156,7 +142,17 @@ class Goblin:
         self.dt = now - self.last_time
         self.last_time = now
 
-        self.state_machine.cur_state.do(player)
+        # [수정] 넉백 중일 때는 상태 머신(추적/공격)을 멈추고 뒤로 밀려남
+        if self.knockback_timer > 0:
+            self.knockback_timer -= self.dt
+            # 맞은 방향(hit_face_dir)으로 200의 속도로 밀려남
+            self.x += self.hit_face_dir * 200 * self.dt
+
+            # 화면 밖으로 나가지 않게 (선택사항)
+            self.x = max(0, min(1200, self.x))
+        else:
+            # 넉백이 끝나면 정상 행동
+            self.state_machine.cur_state.do(player)
 
     def draw(self, camera_y):
         self.state_machine.draw(camera_y)
@@ -164,11 +160,16 @@ class Goblin:
     def get_bb(self):
         return self.x - 30, self.y - 40, self.x + 30, self.y + 40
 
-    def hit(self, damage=1):
+    # [수정] hit 함수가 데미지와 함께 '공격 방향'도 받도록 수정
+    def hit(self, damage, hit_dir):
         self.hp -= damage
-        if self.hp <= 0:
-            return True
-        return False
+        if self.hp > 0:
+            # 살아있다면 넉백 적용
+            self.knockback_timer = 0.2  # 0.2초 동안 밀려남
+            self.hit_face_dir = hit_dir  # 공격이 날아온 방향대로 밀려남
+            return False  # 생존
+        else:
+            return True  # 사망
 
 
 # --- Dungeon 클래스 ---
@@ -177,7 +178,6 @@ class Dungeon:
         self.image = load_image('bg6_boss.png')
         self.goblins = []
 
-        # 초기 고블린 스폰
         for _ in range(3):
             self.spawn_goblin()
 
