@@ -219,6 +219,8 @@ class Main_Character:
         self.inventory = Inventory()
         self.shop = Shop()
         self.ground_y = 150
+        self.last_throw_time = 0.0
+        self.throw_cooldown = 1.0
 
         self.damage = 1
 
@@ -346,6 +348,9 @@ class Main_Character:
         self.axes.append(new_axe)
 
     def throw_axe(self):
+        if get_time() - self.last_throw_time < self.throw_cooldown:
+            return
+        self.last_throw_time = get_time()
         axe_y_pos = self.y + 10
         new_thrown_axe = ThrownAxe(self.x, axe_y_pos, self.face_dir)
         self.thrown_axes.append(new_thrown_axe)
