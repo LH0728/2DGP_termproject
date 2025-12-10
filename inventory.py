@@ -9,7 +9,7 @@ class Inventory:
             3: 0,  # Rare
             4: 0  # Legend
         }
-        self.coin = 10000
+        self.coin = 0
         self.pickaxe_tier = 0
         self.coin_image = load_image('coin_1.png')
 

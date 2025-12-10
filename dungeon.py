@@ -1,4 +1,3 @@
-# [dungeon.py]
 from pico2d import *
 import random
 import math
@@ -70,6 +69,10 @@ class GoblinAttack:
         self.frame = 0
         self.action_time = 0.0
 
+        # [중요] 공격 상태 진입 시 소리 재생
+        if self.goblin.attack_sound:
+            self.goblin.attack_sound.play()
+
     def do(self, player):
         self.action_time += self.goblin.dt
         self.frame = int(self.action_time * 10)
@@ -104,6 +107,9 @@ class Goblin:
     attack_img_w = 0
     attack_img_h = 0
 
+    # [소리 변수 추가]
+    attack_sound = None
+
     ATTACK_RANGE = 80
     SCALE = 3.0
 
@@ -115,9 +121,16 @@ class Goblin:
         self.last_time = get_time()
         self.dt = 0.0
 
-        # [추가] 넉백 관련 변수
+        # [소리 로드] - 최초 1회만 로드
+        if Goblin.attack_sound is None:
+            try:
+                Goblin.attack_sound = load_wav('goblin_swing.mp3')
+                Goblin.attack_sound.set_volume(40)  # 볼륨 조절
+            except:
+                print("Error: goblin_swing.mp3 not found")
+
         self.knockback_timer = 0.0
-        self.hit_face_dir = 0  # 맞았을 때 날아갈 방향
+        self.hit_face_dir = 0
 
         if Goblin.image_run is None:
             Goblin.image_run = load_image('60021_1.png')
@@ -142,16 +155,11 @@ class Goblin:
         self.dt = now - self.last_time
         self.last_time = now
 
-        # [수정] 넉백 중일 때는 상태 머신(추적/공격)을 멈추고 뒤로 밀려남
         if self.knockback_timer > 0:
             self.knockback_timer -= self.dt
-            # 맞은 방향(hit_face_dir)으로 200의 속도로 밀려남
             self.x += self.hit_face_dir * 200 * self.dt
-
-            # 화면 밖으로 나가지 않게 (선택사항)
             self.x = max(0, min(1200, self.x))
         else:
-            # 넉백이 끝나면 정상 행동
             self.state_machine.cur_state.do(player)
 
     def draw(self, camera_y):
@@ -160,16 +168,14 @@ class Goblin:
     def get_bb(self):
         return self.x - 30, self.y - 40, self.x + 30, self.y + 40
 
-    # [수정] hit 함수가 데미지와 함께 '공격 방향'도 받도록 수정
     def hit(self, damage, hit_dir):
         self.hp -= damage
         if self.hp > 0:
-            # 살아있다면 넉백 적용
-            self.knockback_timer = 0.2  # 0.2초 동안 밀려남
-            self.hit_face_dir = hit_dir  # 공격이 날아온 방향대로 밀려남
-            return False  # 생존
+            self.knockback_timer = 0.2
+            self.hit_face_dir = hit_dir
+            return False
         else:
-            return True  # 사망
+            return True
 
 
 # --- Dungeon 클래스 ---

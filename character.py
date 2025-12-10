@@ -114,9 +114,14 @@ class JUMP:
             if not self.character.is_jumping:
                 self.character.jump_velocity = 15
                 self.character.is_jumping = True
+
+                # [추가] 점프 사운드 재생
+                self.character.jump_sound.play()
+
         elif fall(e):
             if not self.character.is_jumping: self.character.jump_velocity = 0
             self.character.is_jumping = True
+
         if right_down(e):
             self.character.dir = self.character.face_dir = 1
         elif left_down(e):
@@ -219,8 +224,6 @@ class Main_Character:
         self.inventory = Inventory()
         self.shop = Shop()
         self.ground_y = 150
-        self.last_throw_time = 0.0
-        self.throw_cooldown = 1.0
 
         self.damage = 1
 
@@ -231,10 +234,6 @@ class Main_Character:
             2: 10
         }
 
-        self.goblin_kill_count = 0
-
-        self.boss_kill_count = 0
-
         # --- HP 관련 속성 ---
         self.max_hp = 100
         self.hp = 100
@@ -242,10 +241,20 @@ class Main_Character:
 
         self.last_hit_time = 0.0
         self.invincible_duration = 1.0
-
-        # [추가] 자동 회복을 위한 마지막 회복 시간
         self.last_regen_time = get_time()
-        # -------------------
+
+        self.goblin_kill_count = 0
+        self.boss_kill_count = 0
+
+        self.last_throw_time = 0.0
+        self.throw_cooldown = 0.5
+
+        # [추가] 점프 효과음 로드
+        self.jump_sound = load_wav('jump.mp3')
+        self.jump_sound.set_volume(25)  # 소리 크기 (0~128)
+
+        self.swing_sound = load_wav('swing.mp3')
+        self.swing_sound.set_volume(60)  # 볼륨 적절히 조절 (0~128)
 
         self.IDLE = Idle(self)
         self.RUN = Run(self)
@@ -344,16 +353,22 @@ class Main_Character:
         self.state_machine.handle_state_event(('INPUT', event))
 
     def axe(self):
+        self.swing_sound.play()
         new_axe = Axe(parent=self)
         self.axes.append(new_axe)
 
     def throw_axe(self):
         if get_time() - self.last_throw_time < self.throw_cooldown:
             return
+
         self.last_throw_time = get_time()
+
+        self.swing_sound.play()
+
         axe_y_pos = self.y + 10
         new_thrown_axe = ThrownAxe(self.x, axe_y_pos, self.face_dir)
         self.thrown_axes.append(new_thrown_axe)
+        print("도끼 투척!")
 
     def clear_projectiles(self):
         self.thrown_axes.clear()

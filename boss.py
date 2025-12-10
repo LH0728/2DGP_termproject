@@ -39,7 +39,7 @@ class YormungandArm:
 
     def draw(self, camera_y):
         draw_y = self.y - camera_y
-        rotation = math.radians(-90)  # 위를 향함
+        rotation = math.radians(-90)
 
         draw_w = self.width * self.scale
         draw_h = self.height * self.scale
@@ -52,12 +52,8 @@ class YormungandArm:
         )
 
     def get_bb(self):
-        # [수정] 피격 범위 축소
-        # 나누는 값을 키워서 박스를 더 작게 만듦
-        # 기존: // 3, // 2 -> 수정: // 4, // 2.5
         hit_w = (self.height * self.scale) // 4
         hit_h = (self.width * self.scale) // 2.5
-
         return self.x - hit_w, self.y - hit_h, self.x + hit_w, self.y + hit_h
 
 
@@ -101,7 +97,6 @@ class BossIdle:
     def enter(self, e):
         self.action_time = 0.0
         self.boss.frame = 0
-        # 재진입 시 타이머 초기화하지 않음 (페이즈 유지)
 
     def do(self, player):
         self.boss.phase_timer += self.boss.dt
@@ -137,6 +132,9 @@ class BossAttack:
         self.boss.frame = 0
         print("Boss Attack!")
 
+        if self.boss.attack_sound:
+            self.boss.attack_sound.play()
+
     def do(self, player):
         self.boss.phase_timer += self.boss.dt
         self.action_time += self.boss.dt
@@ -171,14 +169,20 @@ class BossExit:
     def __init__(self, boss):
         self.boss = boss
         self.speed = 200
+        self.action_time = 0.0
 
     def enter(self, e):
         print("Boss Exiting (Phase Change)...")
+        self.action_time = 0.0
 
     def do(self, player):
         target_x = 1800
         self.boss.x += self.speed * self.boss.dt
-        self.boss.frame = (self.boss.frame + 1) % self.boss.frame_count
+
+        self.action_time += self.boss.dt
+        time_per_action = 1.0
+        frames_per_action = self.boss.frame_count
+        self.boss.frame = int(self.action_time * frames_per_action / time_per_action) % frames_per_action
 
         if self.boss.x >= target_x:
             self.boss.x = target_x
@@ -216,6 +220,10 @@ class BossArmPhase:
             self.boss.arms.append(new_arm)
             print(f"Arm Spawned! ({self.spawn_count}/2)")
 
+            # [추가] 팔이 솟아오를 때 사운드 재생
+            if self.boss.arm_sound:
+                self.boss.arm_sound.play()
+
         if self.boss.phase_timer > 7.0:
             self.boss.arms.clear()
             self.boss.state_machine.handle_state_event(('PHASE_TIMEOUT', None))
@@ -226,32 +234,42 @@ class BossArmPhase:
     def draw(self, camera_y):
         pass
 
-    # 6. [추가] [사망] 오른쪽으로 완전히 퇴장 (죽었을 때)
 
-
+# 6. [사망]
 class BossDeath:
     def __init__(self, boss):
         self.boss = boss
-        self.speed = 100  # 천천히 퇴장
+        self.speed = 100
 
     def enter(self, e):
-        print("Boss Died... Sliding Out.")
-        # 팔 공격 중 죽었을 수도 있으니 팔 제거
+        print("Boss Died...")
         self.boss.arms.clear()
 
-    def do(self, player):
-        # 오른쪽 끝으로 계속 이동
-        target_x = 2000  # 화면 밖 아주 멀리
-        self.boss.x += self.speed * self.boss.dt
+        if self.boss.death_sound:
+            self.boss.death_sound.play()
 
-        # Idle 애니메이션 재생하며 슬픈 퇴장
+    def do(self, player):
+        self.boss.x += self.speed * self.boss.dt
         self.boss.frame = (self.boss.frame + 1) % self.boss.frame_count
 
     def exit(self, e):
         pass
 
     def draw(self, camera_y):
-        self.boss.draw_body(camera_y)
+        shake_x = random.randint(-5, 5)
+        shake_y = random.randint(-5, 5)
+
+        draw_x = self.boss.x + shake_x
+        draw_y = self.boss.y - camera_y + shake_y
+
+        width = self.boss.frame_width * self.boss.scale
+        height = self.boss.frame_height * self.boss.scale
+
+        self.boss.image.clip_draw(
+            self.boss.frame * self.boss.frame_width, 0,
+            self.boss.frame_width, self.boss.frame_height,
+            draw_x, draw_y, width, height
+        )
 
 
 # -----------------------------------------------------------
@@ -272,19 +290,22 @@ def phase_timeout(e): return e[0] == 'PHASE_TIMEOUT'
 def hidden(e): return e[0] == 'HIDDEN'
 
 
-def dead(e): return e[0] == 'DEAD'  # 사망 이벤트
+def dead(e): return e[0] == 'DEAD'
 
 
 class Yormungand:
     image = None
     image_attack = None
     hp_image = None
+    attack_sound = None
+    death_sound = None
+    arm_sound = None  # [추가] 팔 공격 사운드 변수
 
     def __init__(self, x, y):
         self.x = 1800
         self.y = y
-        self.hp = 500
-        self.max_hp = 500
+        self.hp = 1000
+        self.max_hp = 1000
         self.face_dir = -1
         self.damage = 20
 
@@ -306,6 +327,28 @@ class Yormungand:
             except:
                 pass
 
+        if Yormungand.attack_sound is None:
+            try:
+                Yormungand.attack_sound = load_wav('boss_attack.mp3')
+                Yormungand.attack_sound.set_volume(64)
+            except:
+                pass
+
+        if Yormungand.death_sound is None:
+            try:
+                Yormungand.death_sound = load_wav('boss_death.mp3')
+                Yormungand.death_sound.set_volume(80)
+            except:
+                pass
+
+        # [추가] 팔 공격 사운드 로드
+        if Yormungand.arm_sound is None:
+            try:
+                Yormungand.arm_sound = load_wav('boss_arm.mp3')
+                Yormungand.arm_sound.set_volume(64)
+            except:
+                pass
+
         self.scale = 7.0
         self.dt = 0.0
         self.last_time = get_time()
@@ -319,7 +362,7 @@ class Yormungand:
         self.state_attack = BossAttack(self)
         self.state_exit = BossExit(self)
         self.state_arm = BossArmPhase(self)
-        self.state_death = BossDeath(self)  # 사망 상태 추가
+        self.state_death = BossDeath(self)
 
         self.state_machine = StateMachine(self.state_entrance, {
             self.state_entrance: {arrived: self.state_idle, dead: self.state_death},
@@ -327,7 +370,7 @@ class Yormungand:
             self.state_attack: {anim_end: self.state_idle, phase_timeout: self.state_exit, dead: self.state_death},
             self.state_exit: {hidden: self.state_arm, dead: self.state_death},
             self.state_arm: {phase_timeout: self.state_entrance, dead: self.state_death},
-            self.state_death: {}  # 사망 상태에서는 전이 없음
+            self.state_death: {}
         })
 
     def update(self, player):
@@ -347,7 +390,6 @@ class Yormungand:
 
         self.state_machine.draw(camera_y)
 
-        # 죽거나 팔 공격 중일 때는 HP바 숨김
         if self.state_machine.cur_state != self.state_arm and self.state_machine.cur_state != self.state_death:
             self.draw_hp_bar(camera_y)
 
@@ -363,39 +405,21 @@ class Yormungand:
         )
 
     def draw_hp_bar(self, camera_y):
-        # 위치를 위로 올림 (+250)
         draw_y = self.y - camera_y + 250
-
-        # 1. 배경(테두리) 그리기 (너비 300, 높이 30)
-        # 좌: x-150, 우: x+150
         draw_rectangle(self.x - 150, draw_y - 15, self.x + 150, draw_y + 15)
-
-        # 2. HP 비율 계산 (0.0 ~ 1.0 사이로 강제 고정)
-        # min(1.0, ...)을 추가하여 100%를 넘지 않게 함
         hp_ratio = max(0.0, min(1.0, self.hp / self.max_hp))
-
-        # 3. 게이지 너비 계산 (여백을 위해 최대 290픽셀로 설정)
         max_bar_width = 290
         current_bar_width = max_bar_width * hp_ratio
-
-        # 4. 게이지 그리기
-        # 테두리(x-150)보다 5픽셀 안쪽(x-145)에서 시작하도록 설정
         bar_start_x = self.x - 145
 
         if self.hp_image and current_bar_width > 0:
-            # 이미지로 그리기 (중심 좌표 기준이므로 계산 필요)
             center_x = bar_start_x + (current_bar_width / 2)
-            # 높이도 20으로 줄여서 테두리 안에 쏙 들어가게 함
             self.hp_image.draw(center_x, draw_y, current_bar_width, 20)
-
         elif current_bar_width > 0:
-            # 선으로 그리기 (이미지 없을 때 백업)
             for i in range(int(current_bar_width)):
-                # y 범위도 -10 ~ +10 으로 줄여서 테두리 침범 방지
                 draw_line(bar_start_x + i, draw_y - 10, bar_start_x + i, draw_y + 10)
 
     def get_bb(self):
-        # 팔 공격, 퇴장, 사망 상태일 때는 충돌 박스 치워버림
         if self.state_machine.cur_state in [self.state_arm, self.state_exit, self.state_death]:
             return -1000, -1000, -900, -900
 
@@ -403,8 +427,6 @@ class Yormungand:
 
         if self.state_machine.cur_state == self.state_attack:
             width = (self.attack_frame_width * self.scale) // 2
-            # [수정] 공격 피격 범위 축소 (살짝 줄임)
-            # -200 -> -150으로 줄이고, 위아래 여백(+20)을 둠
             return self.x - width - 150, self.y - height + 20, self.x + width - 40, self.y + height - 20
         else:
             width = (self.frame_width * self.scale) // 2
@@ -414,7 +436,6 @@ class Yormungand:
         self.hp -= damage
         if self.hp <= 0:
             self.hp = 0
-            # [중요] 죽으면 바로 상태 변경 이벤트 발생
             self.state_machine.handle_state_event(('DEAD', None))
-            return True  # 죽었음을 알림
+            return True
         return False

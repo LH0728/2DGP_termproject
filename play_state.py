@@ -1,6 +1,6 @@
 from pico2d import *
 import game_framework
-import game_over_state  # 사망 시 이동할 상태
+import game_over_state
 
 # 기존 import들
 from character import Main_Character
@@ -25,12 +25,18 @@ merchant = None
 quest_npc = None
 camera_y = 0.0
 
+# [음악 변수]
+bg_music = None  # 마을/광산
+boss_music = None  # 보스방 배경음악
+dungeon_music = None  # 던전 배경음악
+boss_start_sound = None  # [추가] 보스 입장 효과음
+
 
 def enter():
-    # 게임 시작/초기화 시 호출되는 함수 (기존 setup_worlds 로직)
     global village_world, mine_world, mine_2_world, dungeon_world, boss_world, current_world
     global main_character, hit_effects, merchant, quest_npc
     global camera_y
+    global bg_music, boss_music, dungeon_music, boss_start_sound  # [추가]
 
     camera_y = 0.0
     main_character = Main_Character()
@@ -55,20 +61,59 @@ def enter():
     current_world = village_world
     hit_effects = []
 
+    # [음악 로드]
+    if bg_music is None:
+        bg_music = load_music('villagesound.mp3')
+        bg_music.set_volume(40)
+
+    if boss_music is None:
+        boss_music = load_music('bossbgm.mp3')
+        boss_music.set_volume(64)
+
+    if dungeon_music is None:
+        dungeon_music = load_music('dungeon.mp3')
+        dungeon_music.set_volume(50)
+
+    # [추가] 보스 입장 사운드 로드
+    if boss_start_sound is None:
+        boss_start_sound = load_wav('boss.mp3')
+        boss_start_sound.set_volume(100)  # 효과음이니 조금 크게
+
+    # 시작 시 마을 음악 재생
+    bg_music.repeat_play()
+
 
 def exit():
-    # 게임 종료/상태 변경 시 호출 (필요하면 메모리 정리)
-    global main_character, current_world
-    # main_character = None # 필요에 따라 초기화
-    pass
+    global main_character, current_world, bg_music, boss_music, dungeon_music, boss_start_sound
+    # 음악 정리
+    if bg_music:
+        bg_music.stop()
+        del bg_music
+        bg_music = None
+
+    if boss_music:
+        boss_music.stop()
+        del boss_music
+        boss_music = None
+
+    if dungeon_music:
+        dungeon_music.stop()
+        del dungeon_music
+        dungeon_music = None
+
+    if boss_start_sound:
+        del boss_start_sound
+        boss_start_sound = None
 
 
 def update():
     global current_world, hit_effects, camera_y
     global mine_world, dungeon_world, boss_world
 
-    # [중요] 캐릭터 사망 체크 -> 게임 오버 상태로 전환
     if main_character.hp <= 0:
+        if bg_music: bg_music.stop()
+        if boss_music: boss_music.stop()
+        if dungeon_music: dungeon_music.stop()
         game_framework.framework.change_state(game_over_state)
         return
 
@@ -80,7 +125,6 @@ def update():
 
     hit_effects = [effect for effect in hit_effects if not effect.update()]
 
-    # 마을 HP 회복
     if current_world == village_world:
         if get_time() - main_character.last_regen_time >= 1.0:
             if main_character.hp < main_character.max_hp:
@@ -89,10 +133,7 @@ def update():
     else:
         main_character.last_regen_time = get_time()
 
-    # 월드 전환 로직
     handle_world_change()
-
-    # 충돌 체크 호출
     check_collisions()
 
 
@@ -141,12 +182,10 @@ def handle_events():
                 elif main_character.inventory.visible:
                     main_character.inventory.visible = False
                 else:
-                    # ESC 누르면 게임 종료 or 타이틀로 이동 선택
                     game_framework.framework.quit()
 
             elif event.key == SDLK_e:
                 main_character.inventory.toggle()
-            # 광산 이동 키
             elif event.key == SDLK_UP:
                 if current_world == mine_world and 500 < main_character.x < 700:
                     change_world(mine_2_world)
@@ -155,6 +194,11 @@ def handle_events():
                 if current_world == mine_2_world:
                     change_world(mine_world)
                     main_character.x, main_character.y = 600, 150
+
+            elif event.key == SDLK_0:
+                main_character.inventory.add_coin(10000)
+                print("Cheat: 10,000 Coin Added!")
+
             else:
                 main_character.handle_event(event)
 
@@ -166,40 +210,34 @@ def handle_world_change():
     global current_world, main_character, camera_y
     global mine_world, dungeon_world, boss_world
 
-    # 1. 마을 -> 광산
     if current_world == village_world and main_character.x > 1200:
         mine_world = [Mine(), main_character]
         change_world(mine_world)
         main_character.x = 10;
         main_character.y = 150
 
-    # 2. 광산 -> 마을
     elif current_world == mine_world and main_character.x < 0:
         change_world(village_world)
         main_character.x = 1190;
         main_character.y = 150
 
-    # 3. 마을 -> 던전
     elif current_world == village_world and main_character.x < 0:
         dungeon_world = [Dungeon(), main_character]
         change_world(dungeon_world)
         main_character.x = 1190;
         main_character.y = 150
 
-    # 4. 던전 -> 마을
     elif current_world == dungeon_world and main_character.x > 1200:
         change_world(village_world)
         main_character.x = 10;
         main_character.y = 150
 
-    # 5. 던전 -> 보스방
     elif current_world == dungeon_world and main_character.x < 0:
         boss_world = [BossStage(), main_character]
         change_world(boss_world)
         main_character.x = 100;
         main_character.y = 150
 
-    # 6. 보스방 -> 던전
     elif current_world == boss_world and main_character.x > 1200:
         dungeon_world = [Dungeon(), main_character]
         change_world(dungeon_world)
@@ -215,6 +253,30 @@ def handle_world_change():
 
 def change_world(new_world):
     global current_world, camera_y
+    global bg_music, boss_music, dungeon_music, boss_start_sound
+
+    # 1. 보스 방으로 갈 때
+    if new_world == boss_world:
+        if bg_music: bg_music.stop()
+        if dungeon_music: dungeon_music.stop()
+        if boss_music: boss_music.repeat_play()
+
+        # [추가] 보스 입장 효과음 재생
+        if boss_start_sound:
+            boss_start_sound.play()
+
+    # 2. 던전으로 갈 때
+    elif new_world == dungeon_world:
+        if bg_music: bg_music.stop()
+        if boss_music: boss_music.stop()
+        if dungeon_music: dungeon_music.repeat_play()
+
+    # 3. 마을이나 광산으로 갈 때
+    elif new_world in [village_world, mine_world, mine_2_world]:
+        if boss_music: boss_music.stop()
+        if dungeon_music: dungeon_music.stop()
+        if bg_music: bg_music.repeat_play()
+
     camera_y = 0.0
     current_world = new_world
     main_character.clear_projectiles()
@@ -240,12 +302,7 @@ def collide(a, b):
 def check_collisions():
     global current_world, main_character
 
-    # 충돌 로직은 기존 main.py 코드를 그대로 가져옵니다.
-    # 내용이 길어서 생략하지 않고 핵심 구조만 보여드립니다.
-    # (실제 파일에는 기존 main.py의 check_collisions 내용을 그대로 넣으세요)
-
     if current_world == mine_world:
-        # ... 광산 충돌 코드 ...
         mine = mine_world[0]
         moles_to_remove = []
         axes_to_remove = []
@@ -272,7 +329,6 @@ def check_collisions():
             if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
 
     elif current_world == mine_2_world:
-        # ... 광산2 충돌 코드 ...
         mine_2 = mine_2_world[0]
         soils_to_remove = []
         axes_to_remove = []
@@ -325,7 +381,6 @@ def check_collisions():
             current_world.remove(m)
 
     elif current_world == dungeon_world:
-        # ... 던전 충돌 코드 ...
         dungeon = dungeon_world[0]
         goblins_to_remove = []
         axes_to_remove = []
@@ -362,7 +417,6 @@ def check_collisions():
             if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
 
     elif current_world == boss_world:
-        # ... 보스 충돌 코드 ...
         boss_stage = boss_world[0]
         boss = boss_stage.boss
         if boss.hp > 0:

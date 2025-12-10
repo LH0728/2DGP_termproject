@@ -1,4 +1,6 @@
 from pico2d import *
+import game_framework
+import game_over_state
 
 
 # --- Village 클래스 ---
@@ -57,8 +59,13 @@ class QuestNPC:
         self.x, self.y = x, y
         self.image = load_image('10204_T1.png')
 
-        # [삭제됨] UI 배경 이미지 로드 안 함
-        self.ui_bg = None
+        # [추가] 퀘스트 완료 사운드 로드
+        self.quest_sound = None
+        try:
+            self.quest_sound = load_wav('quest.mp3')
+            self.quest_sound.set_volume(64)
+        except:
+            pass
 
         self.frame = 0
         self.timer = 0.0
@@ -160,17 +167,11 @@ class QuestNPC:
         if current_count >= target_count:
             text_color = (0, 255, 0)
 
-        # [삭제됨] 배경 이미지 그리기 삭제됨
-
-        # 텍스트 그리기
         self.font.draw(820, 85, q['title'], (255, 255, 0))
         self.font.draw(820, 55, f"{q['desc']} ({current_count}/{target_count})", text_color)
 
     def handle_interaction(self, character):
-        # 이미 퀘스트를 다 깼다면 바로 게임 오버 화면으로
         if self.quest_index >= len(self.quests):
-            import game_framework
-            import game_over_state  # [수정] game_over_state로 변경
             game_framework.framework.change_state(game_over_state)
             return
 
@@ -202,6 +203,10 @@ class QuestNPC:
                 is_clear = True
 
         if is_clear:
+            # [추가] 퀘스트 완료 사운드 재생
+            if self.quest_sound:
+                self.quest_sound.play()
+
             character.inventory.add_coin(q['reward'])
             print(f"[Quest 완료] {q['title']} 클리어! 보상: {q['reward']}코인")
 
@@ -211,10 +216,7 @@ class QuestNPC:
             self.quest_index += 1
             self.is_started = False
 
-            # [수정] 마지막 퀘스트 완료 시 게임 오버 화면으로 이동
             if self.quest_index >= len(self.quests):
-                import game_framework
-                import game_over_state  # [수정] game_over_state로 변경
                 game_framework.framework.change_state(game_over_state)
 
         else:
