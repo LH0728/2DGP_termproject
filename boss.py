@@ -282,7 +282,7 @@ class Yormungand:
     def __init__(self, x, y):
         self.x = 1800
         self.y = y
-        self.hp = 500
+        self.hp = 1000
         self.max_hp = 500
         self.face_dir = -1
         self.damage = 20
