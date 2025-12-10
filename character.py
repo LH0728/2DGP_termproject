@@ -11,10 +11,7 @@ from axe import *
 class HPBar:
     def __init__(self, character):
         self.character = character
-        # 프로젝트 폴더에 'hp_block.png' 파일이 있어야 합니다.
         self.fill_image = load_image('hp.png')
-
-        # UI 위치 및 크기
         self.x = 50
         self.y = 50
         self.block_spacing = 18
@@ -26,7 +23,6 @@ class HPBar:
             self.font = None
 
     def draw(self):
-        # HP 비율 계산 및 블록 그리기
         hp_ratio = max(0.0, min(self.character.hp / self.character.max_hp, 1.0))
         num_blocks_to_draw = int(hp_ratio * self.max_blocks)
 
@@ -224,9 +220,8 @@ class Main_Character:
         self.shop = Shop()
         self.ground_y = 150
 
-        self.damage = 1  # 현재 공격력 (기본 1)
+        self.damage = 1
 
-        # 티어별 데미지 설정 (0:기본, 1:Azure, 2:Emerald, 3:Gold)
         self.tier_damages = {
             0: 1,
             3: 2,
@@ -239,9 +234,11 @@ class Main_Character:
         self.hp = 100
         self.hp_bar = HPBar(self)
 
-        # [중요: 이 부분이 없어서 오류가 났던 것입니다]
-        self.last_hit_time = 0.0  # 마지막으로 맞은 시간 초기화
-        self.invincible_duration = 1.0  # 무적 시간 (1초)
+        self.last_hit_time = 0.0
+        self.invincible_duration = 1.0
+
+        # [추가] 자동 회복을 위한 마지막 회복 시간
+        self.last_regen_time = get_time()
         # -------------------
 
         self.IDLE = Idle(self)
@@ -296,12 +293,10 @@ class Main_Character:
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
 
-    # [피격 처리 메서드]
     def hit(self, damage):
-        # last_hit_time 변수가 __init__에 있어야 여기서 에러가 안 납니다.
         if get_time() - self.last_hit_time > self.invincible_duration:
             self.hp = max(0, self.hp - damage)
-            self.last_hit_time = get_time()  # 맞은 시간 갱신
+            self.last_hit_time = get_time()
             print(f"[Player Hit] HP: {self.hp}")
             return True
         return False
@@ -357,13 +352,7 @@ class Main_Character:
 
     def equip_pickaxe(self, tier):
         self.inventory.pickaxe_tier = tier
-
-        # 이미지 변경
         Axe.set_tier(tier)
         ThrownAxe.set_tier(tier)
-
-        # 데미지 변경
-        # tier가 딕셔너리에 없으면 기본값 1 적용
         self.damage = self.tier_damages.get(tier, 1)
-
         print(f"[Character] 곡괭이 교체: Tier {tier}, 공격력: {self.damage}")
