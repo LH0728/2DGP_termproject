@@ -291,11 +291,17 @@ def check_collisions():
         for axe in main_character.axes:
             for goblin in dungeon.goblins:
                 if goblin.hp <= 0: continue
-                if collide(axe, goblin):
-                    # [수정] main_character.damage 를 사용하여 데미지 적용
+
+                # [수정] 충돌했으면서 + 아직 이 도끼로 때린 적 없는 고블린인지 확인
+                if collide(axe, goblin) and goblin not in axe.hit_objects:
+
                     if goblin.hit(main_character.damage, main_character.face_dir):
                         if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
+
                     hit_effects.append(HitEffect(goblin.x, goblin.y))
+
+                    # [추가] 때렸다고 리스트에 등록 (이제 이 axe는 이 goblin을 다시 안 때림)
+                    axe.hit_objects.append(goblin)
 
         # 3. 캐릭터 -> 고블린 공격 (던지는 도끼)
         for thrown_axe in main_character.thrown_axes:
@@ -344,9 +350,13 @@ def check_collisions():
 
             # 3. 캐릭터 -> 보스 몸통 공격 (근접 도끼)
             for axe in main_character.axes:
-                if collide(axe, boss):
+                # [수정] 충돌했으면서 + 아직 이 도끼로 보스를 때린 적이 없는지 확인
+                if collide(axe, boss) and boss not in axe.hit_objects:
                     boss.hit(main_character.damage)
                     hit_effects.append(HitEffect(axe.x, axe.y))
+
+                    # [추가] 때렸다고 등록
+                    axe.hit_objects.append(boss)
 
             # 4. 캐릭터 -> 보스 몸통 공격 (던지는 도끼)
             axes_to_remove = []

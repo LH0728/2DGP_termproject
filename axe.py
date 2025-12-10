@@ -41,6 +41,8 @@ class Axe:
         self.frame = 0
         self.angle_rad = 0  # 현재 곡괭이의 회전 각도
 
+        self.hit_objects = []
+
         # 초기 위치 계산 (update에서 매번 갱신됨)
         self.x, self.y = 0, 0
 
