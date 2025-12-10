@@ -175,7 +175,7 @@ class Goblin:
 # --- Dungeon 클래스 ---
 class Dungeon:
     def __init__(self):
-        self.image = load_image('bg6_boss.png')
+        self.image = load_image('bg3_boss.png')
         self.goblins = []
 
         for _ in range(3):

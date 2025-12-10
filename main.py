@@ -1,7 +1,7 @@
 # [main.py] - check_collisions 함수 수정 및 전체 코드
 from pico2d import *
 from character import Main_Character
-from village import Village, Merchant
+from village import Village, Merchant,QuestNPC
 from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
@@ -47,9 +47,13 @@ def handle_events():
                 main_character.shop.handle_event(event, main_character, merchant)
 
             else:
-                if current_world == village_world and merchant:
-                    if merchant.x - 50 <= click_x <= merchant.x + 50 and merchant.y - 50 <= click_y <= merchant.y + 50:
+                if current_world == village_world:
+                    #상인 클릭 처리
+                    if merchant and merchant.x - 50 <= click_x <= merchant.x + 50 and merchant.y - 50 <= click_y <= merchant.y + 50:
                         main_character.shop.toggle()
+
+                    elif quest_npc and quest_npc.x - 50 <= click_x <= quest_npc.x + 50 and quest_npc.y - 50 <= click_y <= quest_npc.y + 50:
+                        quest_npc.handle_interaction(main_character)
 
         elif event.type == SDL_KEYDOWN:
             if event.key == SDLK_ESCAPE:
@@ -81,7 +85,7 @@ def handle_events():
 
 def setup_worlds():
     global village_world, mine_world, mine_2_world, dungeon_world, current_world
-    global main_character, hit_effects, merchant
+    global main_character, hit_effects, merchant, quest_npc
 
     global camera_y
     camera_y = 0.0
@@ -91,7 +95,8 @@ def setup_worlds():
     # 마을 월드 설정
     village = Village()
     merchant = Merchant(800, 150)
-    village_world = [village, merchant, main_character]
+    quest_npc = QuestNPC(400, 150)
+    village_world = [village, merchant, quest_npc, main_character]
 
     # 광산 월드 설정
     mine = Mine()
