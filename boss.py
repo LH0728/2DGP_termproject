@@ -278,12 +278,13 @@ def dead(e): return e[0] == 'DEAD'  # 사망 이벤트
 class Yormungand:
     image = None
     image_attack = None
+    hp_image = None
 
     def __init__(self, x, y):
         self.x = 1800
         self.y = y
         self.hp = 1000
-        self.max_hp = 500
+        self.max_hp = 1000
         self.face_dir = -1
         self.damage = 20
 
@@ -298,6 +299,12 @@ class Yormungand:
         self.attack_frame_width = 101
         self.attack_frame_height = 54
         self.attack_frame_count = 8
+
+        if Yormungand.hp_image is None:
+            try:
+                self.hp_image = load_image('hp.png')
+            except:
+                pass
 
         self.scale = 7.0
         self.dt = 0.0
@@ -356,12 +363,36 @@ class Yormungand:
         )
 
     def draw_hp_bar(self, camera_y):
-        draw_y = self.y - camera_y + 150
+        # 위치를 위로 올림 (+250)
+        draw_y = self.y - camera_y + 250
+
+        # 1. 배경(테두리) 그리기 (너비 300, 높이 30)
+        # 좌: x-150, 우: x+150
         draw_rectangle(self.x - 150, draw_y - 15, self.x + 150, draw_y + 15)
-        hp_ratio = max(0, self.hp / self.max_hp)
-        current_bar_width = 300 * hp_ratio
-        for i in range(int(current_bar_width)):
-            draw_line(self.x - 150 + i, draw_y - 14, self.x - 150 + i, draw_y + 14)
+
+        # 2. HP 비율 계산 (0.0 ~ 1.0 사이로 강제 고정)
+        # min(1.0, ...)을 추가하여 100%를 넘지 않게 함
+        hp_ratio = max(0.0, min(1.0, self.hp / self.max_hp))
+
+        # 3. 게이지 너비 계산 (여백을 위해 최대 290픽셀로 설정)
+        max_bar_width = 290
+        current_bar_width = max_bar_width * hp_ratio
+
+        # 4. 게이지 그리기
+        # 테두리(x-150)보다 5픽셀 안쪽(x-145)에서 시작하도록 설정
+        bar_start_x = self.x - 145
+
+        if self.hp_image and current_bar_width > 0:
+            # 이미지로 그리기 (중심 좌표 기준이므로 계산 필요)
+            center_x = bar_start_x + (current_bar_width / 2)
+            # 높이도 20으로 줄여서 테두리 안에 쏙 들어가게 함
+            self.hp_image.draw(center_x, draw_y, current_bar_width, 20)
+
+        elif current_bar_width > 0:
+            # 선으로 그리기 (이미지 없을 때 백업)
+            for i in range(int(current_bar_width)):
+                # y 범위도 -10 ~ +10 으로 줄여서 테두리 침범 방지
+                draw_line(bar_start_x + i, draw_y - 10, bar_start_x + i, draw_y + 10)
 
     def get_bb(self):
         # 팔 공격, 퇴장, 사망 상태일 때는 충돌 박스 치워버림
