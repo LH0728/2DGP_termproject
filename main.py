@@ -6,6 +6,7 @@ from mine import Mine
 from dungeon import Dungeon
 from hit import HitEffect
 from mine_2 import Mine_2, Mineral
+from boss_map import BossStage
 import random
 
 # 월드 상태
@@ -84,7 +85,7 @@ def handle_events():
             main_character.handle_event(event)
 
 def setup_worlds():
-    global village_world, mine_world, mine_2_world, dungeon_world, current_world
+    global village_world, mine_world, mine_2_world, dungeon_world, boss_world,current_world
     global main_character, hit_effects, merchant, quest_npc
 
     global camera_y
@@ -114,11 +115,15 @@ def setup_worlds():
     current_world = village_world
     hit_effects = []
 
+    # 보스 월드 설정
+    boss_stage = BossStage()
+    boss_world = [boss_stage, main_character]
+
 def update_world():
     global current_world, hit_effects
     global camera_y
     for o in current_world:
-        if isinstance(o, (Mine, Mine_2, Mineral, Dungeon)):
+        if isinstance(o, (Mine, Mine_2, Mineral, Dungeon, BossStage)):
             o.update(main_character)
         else:
             o.update()
@@ -142,6 +147,18 @@ def update_world():
     elif current_world == dungeon_world and main_character.x > 1200:
         change_world(village_world)
         main_character.x = 10
+        main_character.y = 150
+
+    elif current_world == dungeon_world and main_character.x < 0:
+        change_world(boss_world)
+        main_character.x = 100
+        main_character.y = 150
+        print("보스 스테이지 입장!")
+
+        # 보스방 왼쪽 끝 -> 던전
+    elif current_world == boss_world and main_character.x > 1200:
+        change_world(dungeon_world)
+        main_character.x = 1190
         main_character.y = 150
 
     if current_world == mine_2_world:
@@ -298,6 +315,51 @@ def check_collisions():
             if goblin in dungeon.goblins: dungeon.goblins.remove(goblin)
         for thrown_axe in axes_to_remove:
             if thrown_axe in main_character.thrown_axes: main_character.thrown_axes.remove(thrown_axe)
+    # 보스 충돌처리
+    elif current_world == boss_world:
+        boss_stage = boss_world[0]
+        boss = boss_stage.boss
+
+        if boss.hp > 0:
+            # 1. 보스 몸통 -> 캐릭터 공격
+            # (퇴장했거나 팔 페이즈일 때는 get_bb가 화면 밖으로 나가서 안 맞음)
+            if collide(main_character, boss):
+                if main_character.hit(boss.damage):
+                    hit_effects.append(HitEffect(main_character.x, main_character.y))
+                    if main_character.x < boss.x:
+                        main_character.x -= 50
+                    else:
+                        main_character.x += 50
+
+            # 2. [추가] 보스 팔(Arm) -> 캐릭터 공격
+            for arm in boss.arms:
+                if collide(main_character, arm):
+                    if main_character.hit(boss.damage):
+                        hit_effects.append(HitEffect(main_character.x, main_character.y))
+                        # 맞으면 살짝 넉백
+                        if main_character.x < arm.x:
+                            main_character.x -= 30
+                        else:
+                            main_character.x += 30
+
+            # 3. 캐릭터 -> 보스 몸통 공격 (근접 도끼)
+            for axe in main_character.axes:
+                if collide(axe, boss):
+                    boss.hit(main_character.damage)
+                    hit_effects.append(HitEffect(axe.x, axe.y))
+
+            # 4. 캐릭터 -> 보스 몸통 공격 (던지는 도끼)
+            axes_to_remove = []
+            for thrown_axe in main_character.thrown_axes:
+                if collide(thrown_axe, boss):
+                    boss.hit(main_character.damage)
+                    hit_effects.append(HitEffect(thrown_axe.x, thrown_axe.y))
+                    axes_to_remove.append(thrown_axe)
+                    break
+
+            for axe in axes_to_remove:
+                if axe in main_character.thrown_axes:
+                    main_character.thrown_axes.remove(axe)
 
 def render_world():
     global camera_y
@@ -310,6 +372,9 @@ def render_world():
 
     main_character.inventory.draw()
     main_character.shop.draw(main_character)
+
+    if quest_npc:
+        quest_npc.draw_ui(main_character)
 
     update_canvas()
 

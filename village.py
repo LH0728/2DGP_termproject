@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time
+from pico2d import load_image, get_time, load_font
 
 
 class Village:
@@ -61,87 +61,121 @@ class Merchant:
         )
 
 
-# [village.py] 기존 코드 아래에 추가
-from pico2d import *
-
-
-# ... (기존 Village, Merchant 클래스 유지) ...
-
 class QuestNPC:
     def __init__(self, x, y):
         self.x, self.y = x, y
-        # 제공해주신 이미지 로드
         self.image = load_image('10204_T1.png')
 
-        # 애니메이션 관련 변수
         self.frame = 0
         self.timer = 0.0
         self.frame_count = 4
         self.anim_speed = 0.2
-
-        # 이미지 크기: 240x60 -> 프레임당 60x60
         self.width = 60
         self.height = 60
         self.last_time = get_time()
 
-        # 퀘스트 상태 (0: 시작 전, 1: 진행 중, 2: 완료)
-        self.quest_step = 0
+        self.font = load_font('ENCR10B.TTF', 20)
+        self.quest_index = 0
+        self.is_started = False
 
-        # 대화 폰트
-        try:
-            self.font = load_font('ENCR10B.TTF', 16)
-        except:
-            self.font = None
+        # [추가] 퀘스트 완료 메시지 표시용 변수
+        self.show_complete_msg = False
+        self.complete_msg_timer = 0.0
+
+        self.quests = [
+            {
+                'target': 1, 'count': 5, 'reward': 500,
+                'title': "Quest 1: collect the stones", 'desc': "collect the 5 stone."
+            },
+            {
+                'target': 2, 'count': 10, 'reward': 2000,
+                'title': "Quest 2: collect the slivers", 'desc': "collect the 10 silvers."
+            },
+            {
+                'target': 3, 'count': 10, 'reward': 5000,
+                'title': "Quest 3: collect the golds", 'desc': "collect the 10 gold."
+            }
+        ]
 
     def update(self):
         now = get_time()
         dt = now - self.last_time
         self.last_time = now
 
+        # 애니메이션 타이머
         self.timer += dt
         if self.timer >= self.anim_speed:
             self.timer = 0
             self.frame = (self.frame + 1) % self.frame_count
 
+        # [추가] 퀘스트 완료 메시지 타이머 (2초 체크)
+        if self.show_complete_msg:
+            self.complete_msg_timer += dt
+            if self.complete_msg_timer >= 2.0:  # 2초 뒤에
+                self.show_complete_msg = False  # 메시지 끄기
+                self.complete_msg_timer = 0.0
+
     def draw(self, camera_y):
         draw_y = self.y - camera_y
-
-        # 캐릭터 그리기 (약간 확대 2.5배)
         self.image.clip_draw(
             self.frame * self.width, 0, self.width, self.height,
             self.x, draw_y, 150, 150
         )
 
-        # 머리 위에 퀘스트 상태 표시 (텍스트)
         if self.font:
-            if self.quest_step == 0:
-                self.font.draw(self.x - 20, draw_y + 90, "!", (255, 0, 0))  # 느낌표
-            elif self.quest_step == 1:
-                self.font.draw(self.x - 60, draw_y + 90, "Bring 5 Stones", (255, 255, 255))
-            elif self.quest_step == 2:
-                self.font.draw(self.x - 40, draw_y + 90, "Thanks!", (0, 255, 0))
+            if self.quest_index >= len(self.quests):
+                self.font.draw(self.x - 30, draw_y + 90, "Clear!", (0, 255, 0))
+            elif not self.is_started:
+                self.font.draw(self.x, draw_y + 90, "!", (255, 0, 0))
+            else:
+                self.font.draw(self.x, draw_y + 90, "...", (255, 255, 255))
+
+    def draw_ui(self, character):
+        if not self.font: return
+
+        # [추가] 퀘스트 완료 메시지 그리기 (화면 중앙)
+        if self.show_complete_msg:
+            self.font.draw(500, 400, "QUEST COMPLETE!", (0, 255, 0))
+
+        # 퀘스트 진행 정보 그리기 (수락 상태일 때만)
+        if self.is_started and self.quest_index < len(self.quests):
+            q = self.quests[self.quest_index]
+            item_id = q['target']
+            target_count = q['count']
+            current_count = character.inventory.items.get(item_id, 0)
+
+            text_color = (255, 255, 255)
+            if current_count >= target_count:
+                text_color = (0, 255, 0)
+
+            self.font.draw(800, 80, q['title'], (255, 255, 0))
+            self.font.draw(800, 50, f"{q['desc']} ({current_count}/{target_count})", text_color)
 
     def handle_interaction(self, character):
-        # 퀘스트 로직 처리
-        if self.quest_step == 0:
-            print("[Quest] 퀘스트 수락: 1번 광물(회색) 5개를 구해오세요!")
-            self.quest_step = 1
+        if self.quest_index >= len(self.quests):
+            return
 
-        elif self.quest_step == 1:
-            # 인벤토리 확인 (1번 광물 키값은 1)
-            required_item = 1
-            required_count = 5
+        if not self.is_started:
+            self.is_started = True
+            q = self.quests[self.quest_index]
+            print(f"[Quest 시작] {q['title']}을 수락했습니다!")
+            return
 
-            current_count = character.inventory.items.get(required_item, 0)
+        q = self.quests[self.quest_index]
+        item_id = q['target']
+        needed = q['count']
+        has = character.inventory.items.get(item_id, 0)
 
-            if current_count >= required_count:
-                # 아이템 차감 및 보상 지급
-                character.inventory.items[required_item] -= required_count
-                character.inventory.add_coin(1000)
-                print(f"[Quest] 퀘스트 완료! 보상: 1000코인 (남은 광물: {character.inventory.items[required_item]}개)")
-                self.quest_step = 2
-            else:
-                print(f"[Quest] 아직 부족합니다. (현재: {current_count}/5)")
+        if has >= needed:
+            character.inventory.items[item_id] -= needed
+            character.inventory.add_coin(q['reward'])
+            print(f"[Quest 완료] {q['title']} 클리어!")
 
-        elif self.quest_step == 2:
-            print("[Quest] 이미 퀘스트를 완료했습니다.")
+            # [추가] 완료 메시지 활성화
+            self.show_complete_msg = True
+            self.complete_msg_timer = 0.0
+
+            self.quest_index += 1
+            self.is_started = False
+        else:
+            print(f"[Quest 진행중] 부족합니다.")
