@@ -326,7 +326,9 @@ def check_collisions():
                 if collide(axe, goblin) and goblin not in axe.hit_objects:
 
                     if goblin.hit(main_character.damage, main_character.face_dir):
-                        if goblin not in goblins_to_remove: goblins_to_remove.append(goblin)
+                        if goblin not in goblins_to_remove:
+                            goblins_to_remove.append(goblin)
+                            main_character.goblin_kill_count += 1
 
                     hit_effects.append(HitEffect(goblin.x, goblin.y))
 

@@ -61,6 +61,8 @@ class Merchant:
         )
 
 
+# [village.py] QuestNPC 클래스 전체 수정
+
 class QuestNPC:
     def __init__(self, x, y):
         self.x, self.y = x, y
@@ -75,25 +77,34 @@ class QuestNPC:
         self.last_time = get_time()
 
         self.font = load_font('ENCR10B.TTF', 20)
+
         self.quest_index = 0
         self.is_started = False
 
-        # [추가] 퀘스트 완료 메시지 표시용 변수
         self.show_complete_msg = False
         self.complete_msg_timer = 0.0
 
+        # [수정] 퀘스트 목록에 'type' 필드 추가 및 4번 퀘스트 추가
         self.quests = [
+            # 1단계: 돌 수집
             {
-                'target': 1, 'count': 5, 'reward': 500,
-                'title': "Quest 1: collect the stones", 'desc': "collect the 5 stone."
+                'type': 'collect', 'target': 1, 'count': 5, 'reward': 500,
+                'title': "Quest 1: Stone Collector", 'desc': "Collect 5 Stones."
             },
+            # 2단계: 은 수집
             {
-                'target': 2, 'count': 10, 'reward': 2000,
-                'title': "Quest 2: collect the slivers", 'desc': "collect the 10 silvers."
+                'type': 'collect', 'target': 2, 'count': 10, 'reward': 2000,
+                'title': "Quest 2: Silver Rush", 'desc': "Collect 10 Silver."
             },
+            # 3단계: 금 수집
             {
-                'target': 3, 'count': 10, 'reward': 5000,
-                'title': "Quest 3: collect the golds", 'desc': "collect the 10 gold."
+                'type': 'collect', 'target': 3, 'count': 10, 'reward': 5000,
+                'title': "Quest 3: Gold Digger", 'desc': "Collect 10 Gold."
+            },
+            # 4단계: 고블린 사냥
+            {
+                'type': 'hunt', 'target': 'goblin', 'count': 15, 'reward': 10000,
+                'title': "Quest 4: Goblin Slayer", 'desc': "Defeat 15 Goblins."
             }
         ]
 
@@ -102,17 +113,15 @@ class QuestNPC:
         dt = now - self.last_time
         self.last_time = now
 
-        # 애니메이션 타이머
         self.timer += dt
         if self.timer >= self.anim_speed:
             self.timer = 0
             self.frame = (self.frame + 1) % self.frame_count
 
-        # [추가] 퀘스트 완료 메시지 타이머 (2초 체크)
         if self.show_complete_msg:
             self.complete_msg_timer += dt
-            if self.complete_msg_timer >= 2.0:  # 2초 뒤에
-                self.show_complete_msg = False  # 메시지 끄기
+            if self.complete_msg_timer >= 2.0:
+                self.show_complete_msg = False
                 self.complete_msg_timer = 0.0
 
     def draw(self, camera_y):
@@ -124,7 +133,7 @@ class QuestNPC:
 
         if self.font:
             if self.quest_index >= len(self.quests):
-                self.font.draw(self.x - 30, draw_y + 90, "Clear!", (0, 255, 0))
+                self.font.draw(self.x - 30, draw_y + 90, "All Clear!", (0, 255, 0))
             elif not self.is_started:
                 self.font.draw(self.x, draw_y + 90, "!", (255, 0, 0))
             else:
@@ -133,49 +142,72 @@ class QuestNPC:
     def draw_ui(self, character):
         if not self.font: return
 
-        # [추가] 퀘스트 완료 메시지 그리기 (화면 중앙)
         if self.show_complete_msg:
             self.font.draw(500, 400, "QUEST COMPLETE!", (0, 255, 0))
 
-        # 퀘스트 진행 정보 그리기 (수락 상태일 때만)
-        if self.is_started and self.quest_index < len(self.quests):
-            q = self.quests[self.quest_index]
-            item_id = q['target']
-            target_count = q['count']
-            current_count = character.inventory.items.get(item_id, 0)
-
-            text_color = (255, 255, 255)
-            if current_count >= target_count:
-                text_color = (0, 255, 0)
-
-            self.font.draw(800, 80, q['title'], (255, 255, 0))
-            self.font.draw(800, 50, f"{q['desc']} ({current_count}/{target_count})", text_color)
-
-    def handle_interaction(self, character):
-        if self.quest_index >= len(self.quests):
-            return
-
-        if not self.is_started:
-            self.is_started = True
-            q = self.quests[self.quest_index]
-            print(f"[Quest 시작] {q['title']}을 수락했습니다!")
+        if not self.is_started or self.quest_index >= len(self.quests):
             return
 
         q = self.quests[self.quest_index]
-        item_id = q['target']
-        needed = q['count']
-        has = character.inventory.items.get(item_id, 0)
+        target_count = q['count']
+        current_count = 0
 
-        if has >= needed:
-            character.inventory.items[item_id] -= needed
+        # [수정] 퀘스트 타입에 따라 현재 진행도 계산
+        if q['type'] == 'collect':
+            current_count = character.inventory.items.get(q['target'], 0)
+        elif q['type'] == 'hunt':
+            current_count = character.goblin_kill_count
+
+        text_color = (255, 255, 255)
+        if current_count >= target_count:
+            text_color = (0, 255, 0)
+
+        self.font.draw(800, 80, q['title'], (255, 255, 0))
+        self.font.draw(800, 50, f"{q['desc']} ({current_count}/{target_count})", text_color)
+
+    def handle_interaction(self, character):
+        if self.quest_index >= len(self.quests):
+            print("[Quest] 모든 의뢰를 완료했습니다.")
+            return
+
+        q = self.quests[self.quest_index]
+
+        # 1. 퀘스트 시작 전이면 수락
+        if not self.is_started:
+            self.is_started = True
+
+            # [추가] 사냥 퀘스트를 시작할 때, 현재까지 잡은 수를 기준으로 카운트하고 싶다면
+            # 여기서 character.goblin_kill_count를 0으로 초기화할 수도 있습니다.
+            # 지금은 "누적" 카운트로 진행합니다.
+
+            print(f"[Quest 시작] {q['title']}을 수락했습니다!")
+            return
+
+        # 2. 퀘스트 진행 중 -> 완료 조건 확인
+        is_clear = False
+
+        if q['type'] == 'collect':
+            item_id = q['target']
+            needed = q['count']
+            has = character.inventory.items.get(item_id, 0)
+            if has >= needed:
+                character.inventory.items[item_id] -= needed
+                is_clear = True
+
+        elif q['type'] == 'hunt':
+            needed = q['count']
+            has = character.goblin_kill_count
+            if has >= needed:
+                is_clear = True
+
+        if is_clear:
             character.inventory.add_coin(q['reward'])
-            print(f"[Quest 완료] {q['title']} 클리어!")
+            print(f"[Quest 완료] {q['title']} 클리어! 보상: {q['reward']}코인")
 
-            # [추가] 완료 메시지 활성화
             self.show_complete_msg = True
             self.complete_msg_timer = 0.0
 
             self.quest_index += 1
             self.is_started = False
         else:
-            print(f"[Quest 진행중] 부족합니다.")
+            print(f"[Quest 진행중] 조건을 만족하지 못했습니다.")

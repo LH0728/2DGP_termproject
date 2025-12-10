@@ -229,6 +229,8 @@ class Main_Character:
             2: 10
         }
 
+        self.goblin_kill_count = 0
+
         # --- HP 관련 속성 ---
         self.max_hp = 100
         self.hp = 100
