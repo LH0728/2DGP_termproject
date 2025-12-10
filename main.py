@@ -381,7 +381,8 @@ def check_collisions():
             for axe in main_character.axes:
                 # [수정] 충돌했으면서 + 아직 이 도끼로 보스를 때린 적이 없는지 확인
                 if collide(axe, boss) and boss not in axe.hit_objects:
-                    boss.hit(main_character.damage)
+                    if boss.hit(main_character.damage):
+                        main_character.boss_kill_count += 1
                     hit_effects.append(HitEffect(axe.x, axe.y))
 
                     # [추가] 때렸다고 등록
@@ -391,7 +392,8 @@ def check_collisions():
             axes_to_remove = []
             for thrown_axe in main_character.thrown_axes:
                 if collide(thrown_axe, boss):
-                    boss.hit(main_character.damage)
+                    if boss.hit(main_character.damage):
+                        main_character.boss_kill_count += 1
                     hit_effects.append(HitEffect(thrown_axe.x, thrown_axe.y))
                     axes_to_remove.append(thrown_axe)
                     break

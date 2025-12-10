@@ -61,7 +61,6 @@ class Merchant:
         )
 
 
-# [village.py] QuestNPC 클래스 전체 수정
 
 class QuestNPC:
     def __init__(self, x, y):
@@ -84,27 +83,31 @@ class QuestNPC:
         self.show_complete_msg = False
         self.complete_msg_timer = 0.0
 
-        # [수정] 퀘스트 목록에 'type' 필드 추가 및 4번 퀘스트 추가
         self.quests = [
-            # 1단계: 돌 수집
+            # 1. 돌 수집
+            # {
+            #     'type': 'collect', 'target': 1, 'count': 5, 'reward': 500,
+            #     'title': "Quest 1: Stone Collector", 'desc': "Collect 5 Stones."
+            # },
+            # # 2. 은 수집
+            # {
+            #     'type': 'collect', 'target': 2, 'count': 10, 'reward': 2000,
+            #     'title': "Quest 2: Silver Rush", 'desc': "Collect 10 Silver."
+            # },
+            # # 3. 금 수집
+            # {
+            #     'type': 'collect', 'target': 3, 'count': 10, 'reward': 5000,
+            #     'title': "Quest 3: Gold Digger", 'desc': "Collect 10 Gold."
+            # },
+            # # 4. 고블린 사냥
+            # {
+            #     'type': 'hunt', 'target': 'goblin', 'count': 15, 'reward': 10000,
+            #     'title': "Quest 4: Goblin Slayer", 'desc': "Defeat 15 Goblins."
+            # },
+            #5. 보스 사냥 (마지막)
             {
-                'type': 'collect', 'target': 1, 'count': 5, 'reward': 500,
-                'title': "Quest 1: Stone Collector", 'desc': "Collect 5 Stones."
-            },
-            # 2단계: 은 수집
-            {
-                'type': 'collect', 'target': 2, 'count': 10, 'reward': 2000,
-                'title': "Quest 2: Silver Rush", 'desc': "Collect 10 Silver."
-            },
-            # 3단계: 금 수집
-            {
-                'type': 'collect', 'target': 3, 'count': 10, 'reward': 5000,
-                'title': "Quest 3: Gold Digger", 'desc': "Collect 10 Gold."
-            },
-            # 4단계: 고블린 사냥
-            {
-                'type': 'hunt', 'target': 'goblin', 'count': 15, 'reward': 10000,
-                'title': "Quest 4: Goblin Slayer", 'desc': "Defeat 15 Goblins."
+                'type': 'hunt', 'target': 'boss', 'count': 1, 'reward': 50000,
+                'title': "Final Quest: The End", 'desc': "Defeat Yormungand."
             }
         ]
 
@@ -133,7 +136,7 @@ class QuestNPC:
 
         if self.font:
             if self.quest_index >= len(self.quests):
-                self.font.draw(self.x - 30, draw_y + 90, "All Clear!", (0, 255, 0))
+                self.font.draw(self.x - 30, draw_y + 90, "Legend!", (0, 255, 0))  # 칭호 변경
             elif not self.is_started:
                 self.font.draw(self.x, draw_y + 90, "!", (255, 0, 0))
             else:
@@ -152,11 +155,14 @@ class QuestNPC:
         target_count = q['count']
         current_count = 0
 
-        # [수정] 퀘스트 타입에 따라 현재 진행도 계산
+        # [수정] 타입과 타겟에 따라 현재 수치 가져오기
         if q['type'] == 'collect':
             current_count = character.inventory.items.get(q['target'], 0)
         elif q['type'] == 'hunt':
-            current_count = character.goblin_kill_count
+            if q['target'] == 'goblin':
+                current_count = character.goblin_kill_count
+            elif q['target'] == 'boss':
+                current_count = character.boss_kill_count
 
         text_color = (255, 255, 255)
         if current_count >= target_count:
@@ -167,23 +173,22 @@ class QuestNPC:
 
     def handle_interaction(self, character):
         if self.quest_index >= len(self.quests):
-            print("[Quest] 모든 의뢰를 완료했습니다.")
+            print("[Quest] 당신은 진정한 영웅입니다!")
             return
 
         q = self.quests[self.quest_index]
 
-        # 1. 퀘스트 시작 전이면 수락
+        # 퀘스트 시작
         if not self.is_started:
             self.is_started = True
 
-            # [추가] 사냥 퀘스트를 시작할 때, 현재까지 잡은 수를 기준으로 카운트하고 싶다면
-            # 여기서 character.goblin_kill_count를 0으로 초기화할 수도 있습니다.
-            # 지금은 "누적" 카운트로 진행합니다.
+            # (선택사항) 퀘스트 받을 때 카운트를 0부터 시작하게 하려면 여기서 초기화
+            # if q['type'] == 'hunt' and q['target'] == 'boss': character.boss_kill_count = 0
 
             print(f"[Quest 시작] {q['title']}을 수락했습니다!")
             return
 
-        # 2. 퀘스트 진행 중 -> 완료 조건 확인
+        # 완료 조건 확인
         is_clear = False
 
         if q['type'] == 'collect':
@@ -196,7 +201,13 @@ class QuestNPC:
 
         elif q['type'] == 'hunt':
             needed = q['count']
-            has = character.goblin_kill_count
+            has = 0
+            # [수정] 타겟 확인
+            if q['target'] == 'goblin':
+                has = character.goblin_kill_count
+            elif q['target'] == 'boss':
+                has = character.boss_kill_count
+
             if has >= needed:
                 is_clear = True
 
